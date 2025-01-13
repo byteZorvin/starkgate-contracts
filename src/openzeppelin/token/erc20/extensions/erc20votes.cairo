@@ -32,9 +32,9 @@ mod ERC20Votes {
 
     #[storage]
     struct Storage {
-        ERC20Votes_delegatee: LegacyMap<ContractAddress, ContractAddress>,
-        ERC20Votes_delegate_checkpoints: LegacyMap<ContractAddress, Trace>,
-        ERC20Votes_total_checkpoints: Trace
+        ERC20Votes_delegatee: starknet::storage::Map<ContractAddress, ContractAddress>,
+        ERC20Votes_delegate_checkpoints: starknet::storage::Map<ContractAddress, Trace>,
+        ERC20Votes_total_checkpoints: Trace,
     }
 
     #[event]
@@ -48,14 +48,14 @@ mod ERC20Votes {
     struct DelegateChanged {
         delegator: ContractAddress,
         from_delegate: ContractAddress,
-        to_delegate: ContractAddress
+        to_delegate: ContractAddress,
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct DelegateVotesChanged {
         delegate: ContractAddress,
         previous_votes: u256,
-        new_votes: u256
+        new_votes: u256,
     }
 
     mod Errors {
@@ -99,7 +99,7 @@ mod ERC20Votes {
             delegatee: ContractAddress,
             nonce: felt252,
             expiry: u64,
-            signature: Array<felt252>
+            signature: Array<felt252>,
         ) {
             assert(starknet::get_block_timestamp() <= expiry, Errors::EXPIRED_SIGNATURE);
 
@@ -143,21 +143,21 @@ mod ERC20Votes {
 
         /// Delegates all of `account`'s voting units to `delegatee`.
         fn _delegate(
-            ref self: ContractState, account: ContractAddress, delegatee: ContractAddress
+            ref self: ContractState, account: ContractAddress, delegatee: ContractAddress,
         ) {
             let from_delegate = VotesImpl::delegates(@self, account);
             self.ERC20Votes_delegatee.write(account, delegatee);
 
             self
                 .emit(
-                    DelegateChanged { delegator: account, from_delegate, to_delegate: delegatee }
+                    DelegateChanged { delegator: account, from_delegate, to_delegate: delegatee },
                 );
             self.move_delegate_votes(from_delegate, delegatee, self.get_voting_units(account));
         }
 
         /// Moves delegated votes from one delegate to another.
         fn move_delegate_votes(
-            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256,
         ) {
             let zero_address = Zeroable::zero();
             let block_timestamp = starknet::get_block_timestamp();
@@ -181,7 +181,7 @@ mod ERC20Votes {
         /// To register a burn, `to` should be zero.
         /// Total supply of voting units will be adjusted with mints and burns.
         fn transfer_voting_units(
-            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256,
         ) {
             let zero_address = Zeroable::zero();
             let block_timestamp = starknet::get_block_timestamp();
@@ -195,7 +195,7 @@ mod ERC20Votes {
             }
             self
                 .move_delegate_votes(
-                    VotesImpl::delegates(@self, from), VotesImpl::delegates(@self, to), amount
+                    VotesImpl::delegates(@self, from), VotesImpl::delegates(@self, to), amount,
                 );
         }
 
@@ -228,15 +228,15 @@ const DELEGATION_TYPE_HASH: felt252 =
 struct Delegation {
     delegatee: ContractAddress,
     nonce: felt252,
-    expiry: u64
+    expiry: u64,
 }
 
 impl OffchainMessageHashImpl of IOffchainMessageHash<Delegation> {
     fn get_message_hash(
-        self: @Delegation, name: felt252, version: felt252, owner: ContractAddress
+        self: @Delegation, name: felt252, version: felt252, owner: ContractAddress,
     ) -> felt252 {
         let domain = StarknetDomain {
-            name, version, chain_id: starknet::get_tx_info().unbox().chain_id
+            name, version, chain_id: starknet::get_tx_info().unbox().chain_id,
         };
         let hash_state = PedersenTrait::new(0);
         hash_state

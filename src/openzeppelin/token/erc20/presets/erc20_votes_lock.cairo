@@ -6,12 +6,12 @@
 mod ERC20VotesLock {
     use core::result::ResultTrait;
     use src::access_control_interface::{
-        IAccessControl, RoleId, RoleAdminChanged, RoleGranted, RoleRevoked
+        IAccessControl, RoleId, RoleAdminChanged, RoleGranted, RoleRevoked,
     };
     use src::roles_interface::IMinimalRoles;
     use src::roles_interface::{
         GOVERNANCE_ADMIN, UPGRADE_GOVERNOR, GovernanceAdminAdded, GovernanceAdminRemoved,
-        UpgradeGovernorAdded, UpgradeGovernorRemoved
+        UpgradeGovernorAdded, UpgradeGovernorRemoved,
     };
     use src::err_msg::AccessErrors::{
         INVALID_TOKEN, CALLER_MISSING_ROLE, ZERO_ADDRESS, ALREADY_INITIALIZED,
@@ -26,7 +26,7 @@ mod ERC20VotesLock {
     use src::replaceability_interface::{
         ImplementationData, IReplaceable, IReplaceableDispatcher, IReplaceableDispatcherTrait,
         EIC_INITIALIZE_SELECTOR, IMPLEMENTATION_EXPIRATION, ImplementationAdded,
-        ImplementationRemoved, ImplementationReplaced, ImplementationFinalized
+        ImplementationRemoved, ImplementationReplaced, ImplementationFinalized,
     };
 
     use ERC20::InternalTrait;
@@ -56,16 +56,16 @@ mod ERC20VotesLock {
         // Delay in seconds before performing an upgrade.
         upgrade_delay: u64,
         // Timestamp by which implementation can be activated.
-        impl_activation_time: LegacyMap<felt252, u64>,
+        impl_activation_time: starknet::storage::Map<felt252, u64>,
         // Timestamp until which implementation can be activated.
-        impl_expiration_time: LegacyMap<felt252, u64>,
+        impl_expiration_time: starknet::storage::Map<felt252, u64>,
         // Is the implementation finalized.
         finalized: bool,
         // --- Access Control ---
         // For each role id store its role admin id.
-        role_admin: LegacyMap<RoleId, RoleId>,
+        role_admin: starknet::storage::Map<RoleId, RoleId>,
         // For each role and address, stores true if the address has this role; otherwise, false.
-        role_members: LegacyMap<(RoleId, ContractAddress), bool>,
+        role_members: starknet::storage::Map<(RoleId, ContractAddress), bool>,
     }
 
 
@@ -106,18 +106,18 @@ mod ERC20VotesLock {
             ref self: ERC20::ContractState,
             from: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {}
 
         fn _after_update(
             ref self: ERC20::ContractState,
             from: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let mut unsafe_state = ERC20Votes::unsafe_new_contract_state();
             ERC20Votes::InternalImpl::transfer_voting_units(
-                ref unsafe_state, from, recipient, amount
+                ref unsafe_state, from, recipient, amount,
             );
         }
     }
@@ -147,7 +147,7 @@ mod ERC20VotesLock {
     impl RolesInternal of _RolesInternal {
         // --- Roles ---
         fn _grant_role_and_emit(
-            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event
+            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event,
         ) {
             if !self.has_role(:role, :account) {
                 assert(account.is_non_zero(), ZERO_ADDRESS);
@@ -157,7 +157,7 @@ mod ERC20VotesLock {
         }
 
         fn _revoke_role_and_emit(
-            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event
+            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event,
         ) {
             if self.has_role(:role, :account) {
                 self.revoke_role(:role, :account);
@@ -171,7 +171,7 @@ mod ERC20VotesLock {
         // contract's constructor.
         //
         fn _initialize_roles(
-            ref self: ContractState, provisional_governance_admin: ContractAddress
+            ref self: ContractState, provisional_governance_admin: ContractAddress,
         ) {
             let un_initialized = self.get_role_admin(role: GOVERNANCE_ADMIN) == 0;
             assert(un_initialized, ALREADY_INITIALIZED);
@@ -196,7 +196,7 @@ mod ERC20VotesLock {
             ref self: ContractState,
             account: ContractAddress,
             delegatee: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             // Only locked token.
             assert(get_caller_address() == self.locked_token.read(), 'INVALID_CALLER');
@@ -240,21 +240,21 @@ mod ERC20VotesLock {
         }
 
         fn set_impl_activation_time(
-            ref self: ContractState, implementation_data: ImplementationData, activation_time: u64
+            ref self: ContractState, implementation_data: ImplementationData, activation_time: u64,
         ) {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_activation_time.write(impl_key, activation_time);
         }
 
         fn get_impl_expiration_time(
-            self: @ContractState, implementation_data: ImplementationData
+            self: @ContractState, implementation_data: ImplementationData,
         ) -> u64 {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_expiration_time.read(impl_key)
         }
 
         fn set_impl_expiration_time(
-            ref self: ContractState, implementation_data: ImplementationData, expiration_time: u64
+            ref self: ContractState, implementation_data: ImplementationData, expiration_time: u64,
         ) {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_expiration_time.write(impl_key, expiration_time);
@@ -269,14 +269,14 @@ mod ERC20VotesLock {
 
         // Gets the implementation activation time.
         fn get_impl_activation_time(
-            self: @ContractState, implementation_data: ImplementationData
+            self: @ContractState, implementation_data: ImplementationData,
         ) -> u64 {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_activation_time.read(impl_key)
         }
 
         fn add_new_implementation(
-            ref self: ContractState, implementation_data: ImplementationData
+            ref self: ContractState, implementation_data: ImplementationData,
         ) {
             self.only_upgrade_governor();
 
@@ -339,11 +339,11 @@ mod ERC20VotesLock {
                     let res = library_call_syscall(
                         class_hash: eic_data.eic_hash,
                         function_selector: EIC_INITIALIZE_SELECTOR,
-                        calldata: calldata_wrapper.span()
+                        calldata: calldata_wrapper.span(),
                     );
                     assert(res.is_ok(), EIC_LIB_CALL_FAILED);
                 },
-                Option::None(()) => {}
+                Option::None(()) => {},
             };
 
             // Replace the class hash.
@@ -371,9 +371,8 @@ mod ERC20VotesLock {
     impl LockImpl of _LockImpl {
         fn _lock(ref self: ContractState, account: ContractAddress, amount: u256) {
             let _this = get_contract_address();
-            IERC20Dispatcher {
-                contract_address: self.locked_token.read()
-            }.transfer_from(sender: account, recipient: _this, :amount);
+            IERC20Dispatcher { contract_address: self.locked_token.read() }
+                .transfer_from(sender: account, recipient: _this, :amount);
             let mut unsafe_state = ERC20::unsafe_new_contract_state();
             unsafe_state._mint::<ERC20VotesHooksImpl>(recipient: account, :amount);
 
@@ -384,9 +383,8 @@ mod ERC20VotesLock {
             let mut unsafe_state = ERC20::unsafe_new_contract_state();
             unsafe_state._burn::<ERC20VotesHooksImpl>(:account, :amount);
 
-            IERC20Dispatcher {
-                contract_address: self.locked_token.read()
-            }.transfer(recipient: account, :amount);
+            IERC20Dispatcher { contract_address: self.locked_token.read() }
+                .transfer(recipient: account, :amount);
 
             self.emit(Unlocked { account: account, amount: amount });
         }
@@ -467,7 +465,7 @@ mod ERC20VotesLock {
 
         fn register_governance_admin(ref self: ContractState, account: ContractAddress) {
             let event = Event::GovernanceAdminAdded(
-                GovernanceAdminAdded { added_account: account, added_by: get_caller_address() }
+                GovernanceAdminAdded { added_account: account, added_by: get_caller_address() },
             );
             self._grant_role_and_emit(role: GOVERNANCE_ADMIN, :account, :event);
         }
@@ -475,15 +473,15 @@ mod ERC20VotesLock {
         fn remove_governance_admin(ref self: ContractState, account: ContractAddress) {
             let event = Event::GovernanceAdminRemoved(
                 GovernanceAdminRemoved {
-                    removed_account: account, removed_by: get_caller_address()
-                }
+                    removed_account: account, removed_by: get_caller_address(),
+                },
             );
             self._revoke_role_and_emit(role: GOVERNANCE_ADMIN, :account, :event);
         }
 
         fn register_upgrade_governor(ref self: ContractState, account: ContractAddress) {
             let event = Event::UpgradeGovernorAdded(
-                UpgradeGovernorAdded { added_account: account, added_by: get_caller_address() }
+                UpgradeGovernorAdded { added_account: account, added_by: get_caller_address() },
             );
             self._grant_role_and_emit(role: UPGRADE_GOVERNOR, :account, :event);
         }
@@ -491,8 +489,8 @@ mod ERC20VotesLock {
         fn remove_upgrade_governor(ref self: ContractState, account: ContractAddress) {
             let event = Event::UpgradeGovernorRemoved(
                 UpgradeGovernorRemoved {
-                    removed_account: account, removed_by: get_caller_address()
-                }
+                    removed_account: account, removed_by: get_caller_address(),
+                },
             );
             self._revoke_role_and_emit(role: UPGRADE_GOVERNOR, :account, :event);
         }
@@ -531,7 +529,7 @@ mod ERC20VotesLock {
         }
 
         fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress,
         ) -> u256 {
             let unsafe_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20Impl::allowance(@unsafe_state, owner, spender)
@@ -541,7 +539,7 @@ mod ERC20VotesLock {
             let mut unsafe_state = ERC20::unsafe_new_contract_state();
             let sender = starknet::get_caller_address();
             ERC20::InternalImpl::_transfer::<
-                ERC20VotesHooksImpl
+                ERC20VotesHooksImpl,
             >(ref unsafe_state, sender, recipient, amount);
             true
         }
@@ -550,13 +548,13 @@ mod ERC20VotesLock {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) -> bool {
             let mut unsafe_state = ERC20::unsafe_new_contract_state();
             let caller = starknet::get_caller_address();
             ERC20::InternalImpl::_spend_allowance(ref unsafe_state, sender, caller, amount);
             ERC20::InternalImpl::_transfer::<
-                ERC20VotesHooksImpl
+                ERC20VotesHooksImpl,
             >(ref unsafe_state, sender, recipient, amount);
             true
         }
@@ -581,7 +579,7 @@ mod ERC20VotesLock {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) -> bool {
             ERC20Impl::transfer_from(ref self, sender, recipient, amount)
         }
@@ -589,7 +587,7 @@ mod ERC20VotesLock {
 
     #[external(v0)]
     fn increase_allowance(
-        ref self: ContractState, spender: ContractAddress, added_value: u256
+        ref self: ContractState, spender: ContractAddress, added_value: u256,
     ) -> bool {
         let mut unsafe_state = ERC20::unsafe_new_contract_state();
         ERC20::InternalImpl::_increase_allowance(ref unsafe_state, spender, added_value)
@@ -597,14 +595,14 @@ mod ERC20VotesLock {
 
     #[external(v0)]
     fn increaseAllowance(
-        ref self: ContractState, spender: ContractAddress, addedValue: u256
+        ref self: ContractState, spender: ContractAddress, addedValue: u256,
     ) -> bool {
         increase_allowance(ref self, spender, addedValue)
     }
 
     #[external(v0)]
     fn decrease_allowance(
-        ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ref self: ContractState, spender: ContractAddress, subtracted_value: u256,
     ) -> bool {
         let mut unsafe_state = ERC20::unsafe_new_contract_state();
         ERC20::InternalImpl::_decrease_allowance(ref unsafe_state, spender, subtracted_value)
@@ -612,7 +610,7 @@ mod ERC20VotesLock {
 
     #[external(v0)]
     fn decreaseAllowance(
-        ref self: ContractState, spender: ContractAddress, subtractedValue: u256
+        ref self: ContractState, spender: ContractAddress, subtractedValue: u256,
     ) -> bool {
         decrease_allowance(ref self, spender, subtractedValue)
     }
@@ -650,11 +648,11 @@ mod ERC20VotesLock {
             delegatee: ContractAddress,
             nonce: felt252,
             expiry: u64,
-            signature: Array<felt252>
+            signature: Array<felt252>,
         ) {
             let mut unsafe_state = ERC20Votes::unsafe_new_contract_state();
             ERC20Votes::VotesImpl::delegate_by_sig(
-                ref unsafe_state, delegator, delegatee, nonce, expiry, signature
+                ref unsafe_state, delegator, delegatee, nonce, expiry, signature,
             );
         }
     }

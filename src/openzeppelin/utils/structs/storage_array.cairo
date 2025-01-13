@@ -5,7 +5,7 @@ use array::ArrayTrait;
 use poseidon::poseidon_hash_span;
 use starknet::{
     StorageBaseAddress, Store, SyscallResultTrait, SyscallResult, storage_address_from_base,
-    storage_base_address_from_felt252, storage_read_syscall, storage_write_syscall
+    storage_base_address_from_felt252, storage_read_syscall, storage_write_syscall,
 };
 
 const NOT_IMPLEMENTED: felt252 = 'Not implemented';
@@ -14,7 +14,7 @@ const NOT_IMPLEMENTED: felt252 = 'Not implemented';
 #[derive(Copy, Drop)]
 struct StorageArray<T> {
     address_domain: u32,
-    base: StorageBaseAddress
+    base: StorageBaseAddress,
 }
 
 impl StoreStorageArray<T, impl TDrop: Drop<T>, impl TStore: Store<T>> of Store<StorageArray<T>> {
@@ -24,19 +24,19 @@ impl StoreStorageArray<T, impl TDrop: Drop<T>, impl TStore: Store<T>> of Store<S
     }
     #[inline(always)]
     fn write(
-        address_domain: u32, base: StorageBaseAddress, value: StorageArray<T>
+        address_domain: u32, base: StorageBaseAddress, value: StorageArray<T>,
     ) -> SyscallResult<()> {
         SyscallResult::Err(array![NOT_IMPLEMENTED])
     }
     #[inline(always)]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<StorageArray<T>> {
         SyscallResult::Err(array![NOT_IMPLEMENTED])
     }
     #[inline(always)]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: StorageArray<T>
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: StorageArray<T>,
     ) -> SyscallResult<()> {
         SyscallResult::Err(array![NOT_IMPLEMENTED])
     }
@@ -63,7 +63,7 @@ impl StorageArrayImpl<T, +Drop<T>, impl TStore: Store<T>> of StorageArrayTrait<T
         // Get the storage address of the element
         let storage_address_felt: felt252 = storage_address_from_base(*self.base).into();
         let element_address = poseidon_hash_span(
-            array![storage_address_felt + index.into()].span()
+            array![storage_address_felt + index.into()].span(),
         );
 
         // Read the element from storage
@@ -75,12 +75,12 @@ impl StorageArrayImpl<T, +Drop<T>, impl TStore: Store<T>> of StorageArrayTrait<T
         // Get the storage address of the element
         let storage_address_felt: felt252 = storage_address_from_base(self.base).into();
         let element_address = poseidon_hash_span(
-            array![storage_address_felt + index.into()].span()
+            array![storage_address_felt + index.into()].span(),
         );
 
         // Write the element to storage
         TStore::write(
-            self.address_domain, storage_base_address_from_felt252(element_address), value
+            self.address_domain, storage_base_address_from_felt252(element_address), value,
         )
             .unwrap_syscall()
     }

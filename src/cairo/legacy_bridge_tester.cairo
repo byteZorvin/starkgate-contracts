@@ -9,7 +9,7 @@ mod LegacyBridgeTester {
     use starknet::{ContractAddress, syscalls::library_call_syscall, get_block_timestamp};
     use super::super::replaceability_interface::{
         ImplementationData, IReplaceable, IReplaceableDispatcher, IReplaceableDispatcherTrait,
-        IEICInitializable, EIC_INITIALIZE_SELECTOR, IMPLEMENTATION_EXPIRATION
+        IEICInitializable, EIC_INITIALIZE_SELECTOR, IMPLEMENTATION_EXPIRATION,
     };
 
     #[storage]
@@ -19,9 +19,9 @@ mod LegacyBridgeTester {
         // Delay in seconds before performing an upgrade.
         upgrade_delay: u64,
         // Timestamp by which implementation can be activated.
-        impl_activation_time: LegacyMap<felt252, u64>,
+        impl_activation_time: starknet::storage::Map<felt252, u64>,
         // Timestamp until which implementation can be activated.
-        impl_expiration_time: LegacyMap<felt252, u64>,
+        impl_expiration_time: starknet::storage::Map<felt252, u64>,
         // Is the implementation finalized.
         finalized: bool,
     }
@@ -49,7 +49,7 @@ mod LegacyBridgeTester {
 
         // Returns the implementation activation time.
         fn get_impl_activation_time(
-            self: @ContractState, implementation_data: ImplementationData
+            self: @ContractState, implementation_data: ImplementationData,
         ) -> u64 {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_activation_time.read(impl_key)
@@ -57,7 +57,7 @@ mod LegacyBridgeTester {
 
         // Adds a new implementation.
         fn add_new_implementation(
-            ref self: ContractState, implementation_data: ImplementationData
+            ref self: ContractState, implementation_data: ImplementationData,
         ) {
             // The call is restricted to the upgrade governor.
             self.only_upgrade_governor();
@@ -119,7 +119,7 @@ mod LegacyBridgeTester {
                     let mut res = library_call_syscall(
                         class_hash: eic_data.eic_hash,
                         function_selector: EIC_INITIALIZE_SELECTOR,
-                        calldata: calldata_wrapper.span()
+                        calldata: calldata_wrapper.span(),
                     );
                     if (!res.is_ok()) {
                         let mut err = res.unwrap_err();
@@ -128,7 +128,7 @@ mod LegacyBridgeTester {
                         assert(false, err_msg);
                     }
                 },
-                Option::None(()) => {}
+                Option::None(()) => {},
             };
 
             // Replace the class hash.
@@ -155,21 +155,21 @@ mod LegacyBridgeTester {
 
 
         fn set_impl_activation_time(
-            ref self: ContractState, implementation_data: ImplementationData, activation_time: u64
+            ref self: ContractState, implementation_data: ImplementationData, activation_time: u64,
         ) {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_activation_time.write(impl_key, activation_time);
         }
 
         fn get_impl_expiration_time(
-            self: @ContractState, implementation_data: ImplementationData
+            self: @ContractState, implementation_data: ImplementationData,
         ) -> u64 {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_expiration_time.read(impl_key)
         }
 
         fn set_impl_expiration_time(
-            ref self: ContractState, implementation_data: ImplementationData, expiration_time: u64
+            ref self: ContractState, implementation_data: ImplementationData, expiration_time: u64,
         ) {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_expiration_time.write(impl_key, expiration_time);

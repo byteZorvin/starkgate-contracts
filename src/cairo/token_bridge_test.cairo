@@ -1,21 +1,21 @@
 #[cfg(test)]
 mod token_bridge_test {
-    use integer::BoundedInt;
+    use core::num::traits::Bounded;
 
     use starknet::class_hash::{ClassHash, ClassHashZeroable};
     use starknet::contract_address::ContractAddressZeroable;
     use starknet::{
         contract_address_const, ContractAddress, EthAddress, ContractAddressIntoFelt252,
-        get_block_timestamp, get_contract_address
+        get_block_timestamp, get_contract_address,
     };
     use starknet::syscalls::deploy_syscall;
 
     use super::super::erc20_interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use super::super::mintable_token_interface::{
-        IMintableTokenDispatcher, IMintableTokenDispatcherTrait
+        IMintableTokenDispatcher, IMintableTokenDispatcherTrait,
     };
     use super::super::token_test_setup_interface::{
-        ITokenTestSetupDispatcher, ITokenTestSetupDispatcherTrait
+        ITokenTestSetupDispatcher, ITokenTestSetupDispatcherTrait,
     };
     use super::super::access_control_interface::{
         IAccessControlDispatcher, IAccessControlDispatcherTrait, RoleAdminChanged, RoleRevoked,
@@ -35,7 +35,7 @@ mod token_bridge_test {
 
     use super::super::token_bridge_interface::{ITokenBridgeDispatcher, ITokenBridgeDispatcherTrait};
     use super::super::token_bridge_admin_interface::{
-        ITokenBridgeAdminDispatcher, ITokenBridgeAdminDispatcherTrait
+        ITokenBridgeAdminDispatcher, ITokenBridgeAdminDispatcherTrait,
     };
     use super::super::test_utils::test_utils::{
         caller, not_caller, initial_owner, permitted_minter, set_contract_address_as_caller,
@@ -48,13 +48,13 @@ mod token_bridge_test {
         enable_withdrawal_limit, set_caller_as_app_role_admin_app_governor, default_amount,
         get_default_l1_addresses, prepare_bridge_for_deploy_token, deploy_new_token,
         deploy_new_token_and_deposit, DEFAULT_INITIAL_SUPPLY_HIGH, DEFAULT_L1_BRIDGE_ETH_ADDRESS,
-        DEFAULT_INITIAL_SUPPLY_LOW, NAME, SYMBOL, DECIMALS
+        DEFAULT_INITIAL_SUPPLY_LOW, NAME, SYMBOL, DECIMALS,
     };
 
 
     use super::super::replaceability_interface::{
         EICData, ImplementationData, IReplaceable, IReplaceableDispatcher,
-        IReplaceableDispatcherTrait
+        IReplaceableDispatcherTrait,
     };
 
     const EXPECTED_CONTRACT_IDENTITY: felt252 = 'STARKGATE';
@@ -74,7 +74,7 @@ mod token_bridge_test {
         l2_recipient: ContractAddress,
         amount_to_deposit: u256,
         depositor: EthAddress,
-        message: Span<felt252>
+        message: Span<felt252>,
     ) {
         deploy_new_token(:token_bridge_address, :l1_bridge_address, :l1_token);
 
@@ -86,7 +86,7 @@ mod token_bridge_test {
             :depositor,
             :l2_recipient,
             amount: amount_to_deposit,
-            :message
+            :message,
         );
     }
 
@@ -94,7 +94,7 @@ mod token_bridge_test {
         token_bridge_address: ContractAddress,
         l1_token: EthAddress,
         owner: ContractAddress,
-        amount: u256
+        amount: u256,
     ) {
         let token_bridge = get_token_bridge(:token_bridge_address);
         let l2_token = token_bridge.get_l2_token(:l1_token);
@@ -110,10 +110,11 @@ mod token_bridge_test {
 
         // Verify identity and version.
         assert(
-            token_bridge.get_identity() == EXPECTED_CONTRACT_IDENTITY, 'Contract identity mismatch.'
+            token_bridge.get_identity() == EXPECTED_CONTRACT_IDENTITY,
+            'Contract identity mismatch.',
         );
         assert(
-            token_bridge.get_version() == EXPECTED_CONTRACT_VERSION, 'Contract version mismatch.'
+            token_bridge.get_version() == EXPECTED_CONTRACT_VERSION, 'Contract version mismatch.',
         );
     }
 
@@ -122,7 +123,7 @@ mod token_bridge_test {
     // configured (i.e if it isn't an upgraded legacy bridge it will fail).
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('L2_TOKEN_NOT_SET', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('L2_TOKEN_NOT_SET', 'ENTRYPOINT_FAILED'))]
     fn test_initiate_withdraw_token_not_set() {
         let (_, _, l1_recipient) = get_default_l1_addresses();
 
@@ -137,13 +138,13 @@ mod token_bridge_test {
     // upgrade `l2_l1_token_map` & `l1_l2_token_map` mappings.
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('L1_L2_TOKEN_MISMATCH', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('L1_L2_TOKEN_MISMATCH', 'ENTRYPOINT_FAILED'))]
     fn test_initiate_withdraw_token_mismatch() {
         let (_, l1_token, l1_recipient) = get_default_l1_addresses();
 
         let l2_recipient = initial_owner();
         let token_bridge_address = deploy_upgraded_legacy_bridge(
-            :l1_token, :l2_recipient, token_mismatch: true
+            :l1_token, :l2_recipient, token_mismatch: true,
         );
         let token_bridge = get_token_bridge(:token_bridge_address);
 
@@ -162,7 +163,7 @@ mod token_bridge_test {
         let l2_recipient = initial_owner();
 
         let token_bridge_address = deploy_upgraded_legacy_bridge(
-            :l1_token, :l2_recipient, token_mismatch: false
+            :l1_token, :l2_recipient, token_mismatch: false,
         );
 
         prepare_bridge_for_deploy_token(:token_bridge_address, :l1_bridge_address);
@@ -179,10 +180,10 @@ mod token_bridge_test {
         assert(
             withdraw_legacy_event == Event::withdraw_initiated(
                 withdraw_initiated {
-                    l1_recipient: l1_recipient, amount: amount, caller_address: l2_recipient
-                }
+                    l1_recipient: l1_recipient, amount: amount, caller_address: l2_recipient,
+                },
             ),
-            'withdraw_initiated Error'
+            'withdraw_initiated Error',
         );
         let withdraw_new_event = deserialize_event(*events.at(0));
         assert(
@@ -191,10 +192,10 @@ mod token_bridge_test {
                     l1_token: l1_token,
                     l1_recipient: l1_recipient,
                     amount: amount,
-                    caller_address: l2_recipient
-                }
+                    caller_address: l2_recipient,
+                },
             ),
-            'WithdrawInitiated Error'
+            'WithdrawInitiated Error',
         );
     }
 
@@ -207,7 +208,7 @@ mod token_bridge_test {
         let (l1_bridge_address, _l1_token, _) = get_default_l1_addresses();
         let token_bridge_address = deploy_token_bridge();
         internal_handle_depoist(
-            :token_bridge_address, :l1_bridge_address, l2_recipient: initial_owner(), amount: 1
+            :token_bridge_address, :l1_bridge_address, l2_recipient: initial_owner(), amount: 1,
         );
     }
 
@@ -222,10 +223,10 @@ mod token_bridge_test {
 
         let l2_recipient = initial_owner();
         let token_bridge_address = deploy_upgraded_legacy_bridge(
-            :l1_token, :l2_recipient, token_mismatch: true
+            :l1_token, :l2_recipient, token_mismatch: true,
         );
         internal_handle_depoist(
-            :token_bridge_address, :l1_bridge_address, l2_recipient: initial_owner(), amount: 1
+            :token_bridge_address, :l1_bridge_address, l2_recipient: initial_owner(), amount: 1,
         );
     }
 
@@ -239,7 +240,7 @@ mod token_bridge_test {
 
         let l2_recipient = initial_owner();
         let token_bridge_address = deploy_upgraded_legacy_bridge(
-            :l1_token, :l2_recipient, token_mismatch: false
+            :l1_token, :l2_recipient, token_mismatch: false,
         );
 
         prepare_bridge_for_deploy_token(:token_bridge_address, :l1_bridge_address);
@@ -253,16 +254,16 @@ mod token_bridge_test {
         let deposit_legacy_event = deserialize_event(*deposit_events.at(1));
         assert(
             deposit_legacy_event == Event::deposit_handled(
-                deposit_handled { account: l2_recipient, amount: amount }
+                deposit_handled { account: l2_recipient, amount: amount },
             ),
-            'deposit_handled Error'
+            'deposit_handled Error',
         );
         let deposit_new_event = deserialize_event(*deposit_events.at(0));
         assert(
             deposit_new_event == Event::DepositHandled(
-                DepositHandled { l1_token: l1_token, amount: amount, l2_recipient: l2_recipient }
+                DepositHandled { l1_token: l1_token, amount: amount, l2_recipient: l2_recipient },
             ),
-            'DepositHandled Error'
+            'DepositHandled Error',
         );
     }
 
@@ -282,7 +283,7 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         // Initiate withdraw (set the caller to be the initial_owner).
@@ -299,7 +300,7 @@ mod token_bridge_test {
 
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('INVALID_RECIPIENT', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('INVALID_RECIPIENT', 'ENTRYPOINT_FAILED'))]
     fn test_failed_initiate_token_withdraw_invalid_recipient() {
         let (l1_bridge_address, l1_token, _) = get_default_l1_addresses();
 
@@ -318,7 +319,7 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         // Should panic because the recipient is invalid.
@@ -343,8 +344,8 @@ mod token_bridge_test {
         // The token does not exist; hence, there is no withdrawal limit applied. Therefore, the
         // quota is max.
         assert(
-            token_bridge.get_remaining_withdrawal_quota(:l1_token) == BoundedInt::max(),
-            'remaining_withdraw_quota Error'
+            token_bridge.get_remaining_withdrawal_quota(:l1_token) == Bounded::MAX,
+            'remaining_withdraw_quota Error',
         );
 
         // Deploy a new token and deposit funds to this token.
@@ -356,12 +357,12 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
         // By default, the withdrawal limit is off; hence, the quota is max.
         assert(
-            token_bridge.get_remaining_withdrawal_quota(:l1_token) == BoundedInt::max(),
-            'remaining_withdraw_quota Error'
+            token_bridge.get_remaining_withdrawal_quota(:l1_token) == Bounded::MAX,
+            'remaining_withdraw_quota Error',
         );
 
         // Apply withdrawal limit. Therefore, the quota is the daily withdrawal limit.
@@ -369,9 +370,9 @@ mod token_bridge_test {
         assert(
             token_bridge
                 .get_remaining_withdrawal_quota(
-                    :l1_token
+                    :l1_token,
                 ) == _get_daily_withdrawal_limit(:token_bridge_address, :l1_token),
-            'remaining_withdraw_quota Error'
+            'remaining_withdraw_quota Error',
         );
 
         // Withdraw some of the funds and verifies that the quota is being updated accordingly.
@@ -387,14 +388,14 @@ mod token_bridge_test {
         assert(
             token_bridge.get_remaining_withdrawal_quota(:l1_token) == daily_withdrawal_limit
                 - amount_to_withdraw,
-            'remaining_withdraw_quota Error'
+            'remaining_withdraw_quota Error',
         );
 
         // Stop the withdrawal limit. Therefore, the quota is max.
         disable_withdrawal_limit(:token_bridge_address, :l1_token);
         assert(
-            token_bridge.get_remaining_withdrawal_quota(:l1_token) == BoundedInt::max(),
-            'remaining_withdraw_quota Error'
+            token_bridge.get_remaining_withdrawal_quota(:l1_token) == Bounded::MAX,
+            'remaining_withdraw_quota Error',
         );
     }
 
@@ -418,22 +419,22 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
         let l2_token = token_bridge.get_l2_token(:l1_token);
         starknet::testing::set_contract_address(address: token_bridge_address);
         let token_bridge_state = TokenBridge::contract_state_for_testing();
         let daily_withdrawal_limit_pct: u256 =
             TokenBridge::WithdrawalLimitInternal::get_daily_withdrawal_limit_pct(
-            @token_bridge_state
+            @token_bridge_state,
         )
             .into();
         let expected_result = amount_to_deposit * daily_withdrawal_limit_pct / 100;
         assert(
             TokenBridge::WithdrawalLimitInternal::get_daily_withdrawal_limit(
-                @token_bridge_state, :l2_token
+                @token_bridge_state, :l2_token,
             ) == expected_result,
-            'daily_withdrawal_limit Error'
+            'daily_withdrawal_limit Error',
         );
     }
 
@@ -458,9 +459,9 @@ mod token_bridge_test {
         let emitted_event = pop_and_deserialize_last_event(address: token_bridge_address);
         assert(
             emitted_event == Event::L1BridgeSet(
-                L1BridgeSet { l1_bridge_address: l1_bridge_address }
+                L1BridgeSet { l1_bridge_address: l1_bridge_address },
             ),
-            'L1BridgeSet Error'
+            'L1BridgeSet Error',
         );
         token_bridge_admin.set_l2_token_governance(caller());
         token_bridge_admin.set_erc20_class_hash(erc20_class_hash);
@@ -468,10 +469,10 @@ mod token_bridge_test {
         assert(
             emitted_event == Event::Erc20ClassHashStored(
                 Erc20ClassHashStored {
-                    erc20_class_hash: erc20_class_hash, previous_hash: ClassHashZeroable::zero()
-                }
+                    erc20_class_hash: erc20_class_hash, previous_hash: ClassHashZeroable::zero(),
+                },
             ),
-            'Erc20ClassHashStored Error'
+            'Erc20ClassHashStored Error',
         );
 
         starknet::testing::set_contract_address(token_bridge_address);
@@ -482,16 +483,18 @@ mod token_bridge_test {
             :l1_token,
             name: NAME,
             symbol: SYMBOL,
-            decimals: DECIMALS
+            decimals: DECIMALS,
         );
 
         let l2_token = token_bridge.get_l2_token(:l1_token);
         let emitted_event = pop_and_deserialize_last_event(address: token_bridge_address);
         assert(
             emitted_event == Event::DeployHandled(
-                DeployHandled { l1_token: l1_token, name: NAME, symbol: SYMBOL, decimals: DECIMALS }
+                DeployHandled {
+                    l1_token: l1_token, name: NAME, symbol: SYMBOL, decimals: DECIMALS,
+                },
             ),
-            'DeployHandled Error'
+            'DeployHandled Error',
         );
         assert(token_bridge.get_l1_token(:l2_token) == l1_token, 'token address mismatch');
     }
@@ -501,21 +504,21 @@ mod token_bridge_test {
         token_bridge_address: ContractAddress,
         l1_bridge_address: EthAddress,
         l2_recipient: ContractAddress,
-        amount: u256
+        amount: u256,
     ) {
         let _token_bridge = get_token_bridge(:token_bridge_address);
         let orig = get_contract_address();
         starknet::testing::set_contract_address(address: token_bridge_address);
         let mut token_bridge_state = TokenBridge::contract_state_for_testing();
         TokenBridge::handle_deposit(
-            ref token_bridge_state, from_address: l1_bridge_address.into(), :l2_recipient, :amount
+            ref token_bridge_state, from_address: l1_bridge_address.into(), :l2_recipient, :amount,
         );
         starknet::testing::set_contract_address(address: orig);
     }
 
 
     fn internal_deploy_token(
-        token_bridge_address: ContractAddress, l1_bridge_address: EthAddress, l1_token: EthAddress
+        token_bridge_address: ContractAddress, l1_bridge_address: EthAddress, l1_token: EthAddress,
     ) -> ContractAddress {
         let token_bridge = get_token_bridge(:token_bridge_address);
         let orig = get_contract_address();
@@ -527,7 +530,7 @@ mod token_bridge_test {
             l1_token: l1_token,
             name: NAME,
             symbol: SYMBOL,
-            decimals: DECIMALS
+            decimals: DECIMALS,
         );
         starknet::testing::set_contract_address(address: orig);
         token_bridge.get_l2_token(:l1_token)
@@ -556,15 +559,15 @@ mod token_bridge_test {
         token_bridge_admin.set_l2_token_governance(caller());
         let t1_roles = get_roles(
             contract_address: internal_deploy_token(
-                :token_bridge_address, :l1_bridge_address, l1_token: l1_token1
-            )
+                :token_bridge_address, :l1_bridge_address, l1_token: l1_token1,
+            ),
         );
 
         token_bridge_admin.set_l2_token_governance(not_caller());
         let t2_roles = get_roles(
             contract_address: internal_deploy_token(
-                :token_bridge_address, :l1_bridge_address, l1_token: l1_token2
-            )
+                :token_bridge_address, :l1_bridge_address, l1_token: l1_token2,
+            ),
         );
 
         assert(t1_roles.is_governance_admin(caller()), 'l2_token1 Role not granted');
@@ -585,7 +588,7 @@ mod token_bridge_test {
 
         let l2_recipient = initial_owner();
         let token_bridge_address = deploy_upgraded_legacy_bridge(
-            :l1_token, :l2_recipient, token_mismatch: false
+            :l1_token, :l2_recipient, token_mismatch: false,
         );
 
         // Deploy the token.
@@ -621,7 +624,7 @@ mod token_bridge_test {
             l1_token: l1_token,
             name: name,
             symbol: symbol,
-            decimals: decimals
+            decimals: decimals,
         );
         TokenBridge::handle_token_deployment(
             ref token_bridge_state,
@@ -629,7 +632,7 @@ mod token_bridge_test {
             l1_token: l1_token,
             name: name,
             symbol: symbol,
-            decimals: decimals
+            decimals: decimals,
         );
     }
 
@@ -652,13 +655,13 @@ mod token_bridge_test {
             l1_token: l1_token,
             name: NAME,
             symbol: SYMBOL,
-            decimals: DECIMALS
+            decimals: DECIMALS,
         );
     }
 
 
     #[test]
-    #[should_panic(expected: ('ZERO_WITHDRAWAL', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ZERO_WITHDRAWAL', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_zero_amount_initiate_token_withdraw() {
         let (l1_bridge_address, l1_token, l1_recipient) = get_default_l1_addresses();
@@ -675,7 +678,7 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         // Initiate withdraw.
@@ -685,7 +688,7 @@ mod token_bridge_test {
     }
 
     #[test]
-    #[should_panic(expected: ('INSUFFICIENT_FUNDS', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('INSUFFICIENT_FUNDS', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_excessive_amount_initiate_token_withdraw() {
         let (l1_bridge_address, l1_token, l1_recipient) = get_default_l1_addresses();
@@ -702,7 +705,7 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         // Initiate withdraw.
@@ -728,7 +731,7 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            amount_to_deposit: first_amount
+            amount_to_deposit: first_amount,
         );
 
         // Set the contract address to be of the token bridge, so we can simulate l1 message handler
@@ -745,11 +748,11 @@ mod token_bridge_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            amount: second_amount
+            amount: second_amount,
         );
         let total_amount = first_amount + second_amount;
         assert_l2_account_balance(
-            :token_bridge_address, :l1_token, owner: l2_recipient, amount: total_amount
+            :token_bridge_address, :l1_token, owner: l2_recipient, amount: total_amount,
         );
 
         // Validate event emission.
@@ -757,10 +760,10 @@ mod token_bridge_test {
         assert(
             emitted_event == Event::DepositHandled(
                 DepositHandled {
-                    l1_token: l1_token, l2_recipient: l2_recipient, amount: second_amount
-                }
+                    l1_token: l1_token, l2_recipient: l2_recipient, amount: second_amount,
+                },
             ),
-            'DepositHandled Error'
+            'DepositHandled Error',
         );
     }
 
@@ -789,14 +792,14 @@ mod token_bridge_test {
             l2_recipient: stub_msg_receiver_address,
             :amount_to_deposit,
             depositor: depositor,
-            message: message_span
+            message: message_span,
         );
 
         assert_l2_account_balance(
             :token_bridge_address,
             :l1_token,
             owner: stub_msg_receiver_address,
-            amount: amount_to_deposit
+            amount: amount_to_deposit,
         );
 
         // Validate event emission.
@@ -808,10 +811,10 @@ mod token_bridge_test {
                     l1_token: l1_token,
                     l2_recipient: stub_msg_receiver_address,
                     amount: amount_to_deposit,
-                    message: message_span
-                }
+                    message: message_span,
+                },
             ),
-            'DepositWithMessageHandled Error'
+            'DepositWithMessageHandled Error',
         );
     }
 
@@ -843,7 +846,7 @@ mod token_bridge_test {
             l2_recipient: stub_msg_receiver_address,
             :amount_to_deposit,
             depositor: depositor,
-            message: message_span
+            message: message_span,
         );
     }
 
@@ -874,7 +877,7 @@ mod token_bridge_test {
             l2_recipient: stub_msg_receiver_address,
             :amount_to_deposit,
             depositor: depositor,
-            message: message_span
+            message: message_span,
         );
     }
 
@@ -897,8 +900,8 @@ mod token_bridge_test {
             :initial_owner,
             permitted_minter: token_bridge_address,
             initial_supply: u256 {
-                low: DEFAULT_INITIAL_SUPPLY_LOW, high: DEFAULT_INITIAL_SUPPLY_HIGH
-            }
+                low: DEFAULT_INITIAL_SUPPLY_LOW, high: DEFAULT_INITIAL_SUPPLY_HIGH,
+            },
         );
         let _erc20_token = get_erc20_token(:l2_token);
 
@@ -917,7 +920,7 @@ mod token_bridge_test {
             l1_token: l1_bridge_address,
             :depositor,
             l2_recipient: initial_owner,
-            amount: default_amount()
+            amount: default_amount(),
         );
     }
 }

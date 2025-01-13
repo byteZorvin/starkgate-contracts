@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts for Cairo v0.8.0-beta.1 (utils/structs/checkpoints.cairo)
 
-use integer::u32_sqrt;
+use core::num::traits::Sqrt;
 use openzeppelin::utils::math;
 use super::storage_array::StorageArray;
 use super::storage_array::StorageArrayTrait;
@@ -10,14 +10,14 @@ use super::storage_array::StorageArrayTrait;
 /// time, and later looking up past values by block timestamp.
 #[derive(Copy, Drop, starknet::Store)]
 struct Trace {
-    checkpoints: StorageArray<Checkpoint>
+    checkpoints: StorageArray<Checkpoint>,
 }
 
 /// Generic checkpoint representation.
 #[derive(Copy, Drop, Serde)]
 struct Checkpoint {
     key: u64,
-    value: u256
+    value: u256,
 }
 
 #[generate_trait]
@@ -55,7 +55,7 @@ impl TraceImpl of TraceTrait {
         let mut high = len;
 
         if (len > 5) {
-            let mid = len - u32_sqrt(len).into();
+            let mid = len - len.sqrt().into();
             if (key < checkpoints.read_at(mid).key) {
                 high = mid;
             } else {
@@ -198,7 +198,7 @@ impl CheckpointStorePacking of starknet::StorePacking<Checkpoint, (felt252, felt
 
 #[cfg(test)]
 mod test {
-    use integer::BoundedInt;
+    use core::num::traits::Bounded;
     use super::Checkpoint;
     use super::CheckpointStorePacking;
     use super::_2_POW_184;
@@ -209,8 +209,8 @@ mod test {
     #[test]
     #[available_gas(2000000)]
     fn test_pack_big_key_and_value() {
-        let key = BoundedInt::max();
-        let value = BoundedInt::max();
+        let key = Bounded::MAX;
+        let value = Bounded::MAX;
         let checkpoint = Checkpoint { key, value };
 
         let (key_and_low, _) = CheckpointStorePacking::pack(checkpoint);
@@ -225,14 +225,13 @@ mod test {
     #[test]
     #[available_gas(2000000)]
     fn test_unpack_big_key_and_value() {
-        let key_and_low = BoundedInt::<u64>::max().into() * _2_POW_184
-            + BoundedInt::<u128>::max().into();
-        let high = BoundedInt::<u128>::max().into();
+        let key_and_low = Bounded::<u64>::MAX.into() * _2_POW_184 + Bounded::<u128>::MAX.into();
+        let high = Bounded::<u128>::MAX.into();
 
         let checkpoint = CheckpointStorePacking::unpack((key_and_low, high));
 
-        let expected_key: u64 = BoundedInt::max();
-        let expected_value: u256 = BoundedInt::max();
+        let expected_key: u64 = Bounded::MAX;
+        let expected_value: u256 = Bounded::MAX;
 
         assert(checkpoint.key == expected_key, 'Invalid key');
         assert(checkpoint.value == expected_value, 'Invalid value');

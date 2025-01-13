@@ -1,2 +1,12 @@
 [crate_roots]
-starkgate = "cairo"
+src = "src/cairo"
+openzeppelin = "src/openzeppelin"
+
+[config.global]
+edition = "2023_01"
+
+[config.global.dependencies.openzeppelin]
+discriminator = "openzeppelin"
+
+[config.global.dependencies.src]
+discriminator = "src"
