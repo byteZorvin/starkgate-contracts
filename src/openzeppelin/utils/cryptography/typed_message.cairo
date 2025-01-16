@@ -25,7 +25,7 @@ trait IStructHash<T> {
 
 trait IOffchainMessageHash<T> {
     fn get_message_hash(
-        self: @T, name: felt252, version: felt252, owner: ContractAddress
+        self: @T, name: felt252, version: felt252, owner: ContractAddress,
     ) -> felt252;
 }
 

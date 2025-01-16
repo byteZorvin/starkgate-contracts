@@ -2,7 +2,7 @@
 mod eip712helper_test {
     use src::test_utils::test_utils::deploy_account;
     use src::strk::eip712helper::{
-        pedersen_hash_span, validate_signature, calc_domain_hash, lock_and_delegate_message_hash
+        pedersen_hash_span, validate_signature, calc_domain_hash, lock_and_delegate_message_hash,
     };
 
     const PUBLIC_KEY: felt252 = 0x3a59358373db02be1870eb01ff39d8cf76139d60bd594ef123e550262ba43ae;
@@ -15,7 +15,7 @@ mod eip712helper_test {
     #[available_gas(30000000)]
     fn test_validate_signature_valid_sig() {
         let account_address = deploy_account(public_key: PUBLIC_KEY);
-        let sig = array![SIG_R, SIG_S,];
+        let sig = array![SIG_R, SIG_S];
         validate_signature(account: account_address, hash: MESSAGE_HASH, signature: sig);
     }
 
@@ -24,7 +24,7 @@ mod eip712helper_test {
     #[available_gas(30000000)]
     fn test_validate_signature_invalid_sig() {
         let account_address = deploy_account(public_key: PUBLIC_KEY);
-        let sig = array![SIG_R, SIG_S,];
+        let sig = array![SIG_R, SIG_S];
         validate_signature(account: account_address, hash: INCORRECT_MESSAGE_HASH, signature: sig);
     }
 
@@ -34,17 +34,17 @@ mod eip712helper_test {
         let mut input_1 = array![1, 2, 3].span();
         assert(
             pedersen_hash_span(
-                elements: input_1
+                elements: input_1,
             ) == 441445179418634841919081406710178353724709968888928575445243752807295331953,
-            'HASH_CHAIN_MISMATCH'
+            'HASH_CHAIN_MISMATCH',
         );
 
         let mut input_2 = array![1, 1, 2, 3, 5, 8].span();
         assert(
             pedersen_hash_span(
-                elements: input_2
+                elements: input_2,
             ) == 2383567234044941266234273954434601971633866581716422196120361961392048788157,
-            'HASH_CHAIN_MISMATCH'
+            'HASH_CHAIN_MISMATCH',
         );
     }
 
@@ -62,9 +62,9 @@ mod eip712helper_test {
         assert(calc_domain_hash() == expected_domain_hash, 'DOMAIN_HASH_MISMATCH');
         assert(
             lock_and_delegate_message_hash(
-                domain: expected_domain_hash, :account, :delegatee, :amount, :nonce, :expiry
+                domain: expected_domain_hash, :account, :delegatee, :amount, :nonce, :expiry,
             ) == expected_lock_hash,
-            'LOCK_AND_DELEGATE_HASH_MISMATCH'
+            'LOCK_AND_DELEGATE_HASH_MISMATCH',
         );
     }
 

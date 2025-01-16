@@ -6,24 +6,24 @@
 #[starknet::contract]
 mod RolesExternalInitializer {
     use starknet::{
-        ContractAddress, get_caller_address, //EthAddress, EthAddressIntoFelt252, EthAddressSerde
+        ContractAddress, get_caller_address //EthAddress, EthAddressIntoFelt252, EthAddressSerde
     };
     use super::super::access_control_interface::{
-        IAccessControl, RoleId, RoleAdminChanged, RoleGranted
+        IAccessControl, RoleId, RoleAdminChanged, RoleGranted,
     };
     use super::super::replaceability_interface::IEICInitializable;
     use super::super::roles_interface::{
         APP_GOVERNOR, APP_ROLE_ADMIN, GOVERNANCE_ADMIN, OPERATOR, SECURITY_ADMIN, SECURITY_AGENT,
-        TOKEN_ADMIN, UPGRADE_GOVERNOR
+        TOKEN_ADMIN, UPGRADE_GOVERNOR,
     };
 
     #[storage]
     struct Storage {
         // --- Access Control ---
         // For each role id store its role admin id.
-        role_admin: LegacyMap<RoleId, RoleId>,
+        role_admin: starknet::storage::Map<RoleId, RoleId>,
         // For each role and address, stores true if the address has this role; otherwise, false.
-        role_members: LegacyMap<(RoleId, ContractAddress), bool>,
+        role_members: starknet::storage::Map<(RoleId, ContractAddress), bool>,
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]

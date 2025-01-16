@@ -4,13 +4,13 @@
 mod Update712VarsEIC {
     use super::super::replaceability_interface::IEICInitializable;
     use openzeppelin::token::erc20::presets::erc20_votes_lock::ERC20VotesLock::{
-        DAPP_NAME, DAPP_VERSION
+        DAPP_NAME, DAPP_VERSION,
     };
 
     #[storage]
     struct Storage {
         EIP712_name: felt252,
-        EIP712_version: felt252
+        EIP712_version: felt252,
     }
 
     #[abi(embed_v0)]

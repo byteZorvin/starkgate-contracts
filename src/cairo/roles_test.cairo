@@ -9,11 +9,11 @@ mod roles_test {
         AppRoleAdminRemoved, UpgradeGovernorAdded, SecurityAdminAdded, SecurityAdminRemoved,
         SecurityAgentAdded, SecurityAgentRemoved, UpgradeGovernorRemoved, GovernanceAdminAdded,
         GovernanceAdminRemoved, AppGovernorAdded, AppGovernorRemoved, OperatorAdded,
-        OperatorRemoved, TokenAdminAdded, TokenAdminRemoved
+        OperatorRemoved, TokenAdminAdded, TokenAdminRemoved,
     };
     use src::access_control_interface::{
         IAccessControl, IAccessControlDispatcher, IAccessControlDispatcherTrait, RoleId,
-        RoleAdminChanged, RoleGranted, RoleRevoked
+        RoleAdminChanged, RoleGranted, RoleRevoked,
     };
     use src::erc20_interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use src::test_utils::test_utils::{
@@ -25,7 +25,7 @@ mod roles_test {
     };
     use src::roles_interface::{
         APP_GOVERNOR, APP_ROLE_ADMIN, GOVERNANCE_ADMIN, OPERATOR, TOKEN_ADMIN, UPGRADE_GOVERNOR,
-        SECURITY_ADMIN, SECURITY_AGENT, IRolesDispatcher, IRolesDispatcherTrait
+        SECURITY_ADMIN, SECURITY_AGENT, IRolesDispatcher, IRolesDispatcherTrait,
     };
 
 
@@ -41,7 +41,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_app_governor(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
 
         // Grant the caller the App Role Admin role and then the caller grant the arbitrary_account
@@ -64,7 +64,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_app_role_admin(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
 
         // Grant the arbitrary_account the App Role Admin role by the caller.
@@ -72,7 +72,7 @@ mod roles_test {
         token_bridge_roles.register_app_role_admin(account: arbitrary_account);
 
         assert(
-            token_bridge_roles.is_app_role_admin(account: arbitrary_account), 'Role not granted'
+            token_bridge_roles.is_app_role_admin(account: arbitrary_account), 'Role not granted',
         );
     }
 
@@ -114,7 +114,7 @@ mod roles_test {
         let token_bridge_roles = get_roles(contract_address: token_bridge_address);
         let arbitrary_account = not_caller();
         assert(
-            !token_bridge_roles.is_operator(account: arbitrary_account), 'Unexpected role detected'
+            !token_bridge_roles.is_operator(account: arbitrary_account), 'Unexpected role detected',
         );
 
         // Grant the caller the App Role Admin role and then the caller grant the arbitrary_account
@@ -137,7 +137,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_token_admin(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
 
         // Grant the caller the App Role Admin role and then the caller grant the arbitrary_account
@@ -188,7 +188,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_security_admin(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
 
         // Grant the arbitrary account the Security Admin role.
@@ -196,7 +196,7 @@ mod roles_test {
         token_bridge_roles.register_security_admin(account: arbitrary_account);
 
         assert(
-            token_bridge_roles.is_security_admin(account: arbitrary_account), 'Role not granted'
+            token_bridge_roles.is_security_admin(account: arbitrary_account), 'Role not granted',
         );
     }
 
@@ -211,7 +211,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_security_agent(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
 
         // Grant the arbitrary account the Security Agent role.
@@ -219,7 +219,7 @@ mod roles_test {
         token_bridge_roles.register_security_agent(account: arbitrary_account);
 
         assert(
-            token_bridge_roles.is_security_agent(account: arbitrary_account), 'Role not granted'
+            token_bridge_roles.is_security_agent(account: arbitrary_account), 'Role not granted',
         );
     }
 
@@ -236,7 +236,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_app_governor(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
         // Grant the caller App Role Admin role, in order to allow him to grant App Governor role.
         token_bridge_roles.register_app_role_admin(account: caller());
@@ -244,7 +244,7 @@ mod roles_test {
         token_bridge_roles.register_app_governor(account: arbitrary_account);
         assert(
             token_bridge_roles.is_app_governor(account: arbitrary_account),
-            'register_app_governor failed'
+            'register_app_governor failed',
         );
 
         // Validate the two App Governor registration events.
@@ -254,21 +254,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: APP_GOVERNOR,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == AppGovernorAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'AppGovAdded was not emitted'
+            'AppGovAdded was not emitted',
         );
 
         token_bridge_roles.remove_app_governor(account: arbitrary_account);
         assert(
             !token_bridge_roles.is_app_governor(account: arbitrary_account),
-            'remove_app_governor failed'
+            'remove_app_governor failed',
         );
 
         // Validate the two App Governor removal events.
@@ -278,14 +278,14 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: APP_GOVERNOR,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == AppGovernorRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'AppGovRemoved was not emitted'
+            'AppGovRemoved was not emitted',
         );
     }
 
@@ -300,12 +300,12 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_app_role_admin(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
         token_bridge_roles.register_app_role_admin(account: arbitrary_account);
         assert(
             token_bridge_roles.is_app_role_admin(account: arbitrary_account),
-            'register_app_role_admin failed'
+            'register_app_role_admin failed',
         );
 
         // Validate the two App Role Admin registration events.
@@ -315,21 +315,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: APP_ROLE_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == AppRoleAdminAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'AppRoleAdminAdded wasnt emitted'
+            'AppRoleAdminAdded wasnt emitted',
         );
 
         token_bridge_roles.remove_app_role_admin(account: arbitrary_account);
         assert(
             !token_bridge_roles.is_app_role_admin(account: arbitrary_account),
-            'remove_app_role_admin failed'
+            'remove_app_role_admin failed',
         );
 
         // Validate the two App Role Admin removal events.
@@ -339,15 +339,15 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: APP_ROLE_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == AppRoleAdminRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'AppRoleAdminRemoved not emitted'
+            'AppRoleAdminRemoved not emitted',
         );
     }
 
@@ -373,7 +373,8 @@ mod roles_test {
         assert(!_roles.is_governance_admin(account: arbitrary_account), 'Unexpected role detected');
         _roles.register_governance_admin(account: arbitrary_account);
         assert(
-            _roles.is_governance_admin(account: arbitrary_account), 'register_governance_adm failed'
+            _roles.is_governance_admin(account: arbitrary_account),
+            'register_governance_adm failed',
         );
 
         // Validate the two Governance Admin registration events.
@@ -383,21 +384,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: GOVERNANCE_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == GovernanceAdminAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'GovAdminAdded was not emitted'
+            'GovAdminAdded was not emitted',
         );
 
         _roles.remove_governance_admin(account: arbitrary_account);
         assert(
             !_roles.is_governance_admin(account: arbitrary_account),
-            'remove_governance_admin failed'
+            'remove_governance_admin failed',
         );
 
         // Validate the two Governance Admin removal events.
@@ -407,15 +408,15 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: GOVERNANCE_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == GovernanceAdminRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'GovAdminRemoved was not emitted'
+            'GovAdminRemoved was not emitted',
         );
     }
 
@@ -429,14 +430,14 @@ mod roles_test {
         let token_bridge_roles = get_roles(contract_address: token_bridge_address);
         let arbitrary_account = not_caller();
         assert(
-            !token_bridge_roles.is_operator(account: arbitrary_account), 'Unexpected role detected'
+            !token_bridge_roles.is_operator(account: arbitrary_account), 'Unexpected role detected',
         );
         // Grant the caller App Role Admin role, in order to allow him to grant Operator role.
         token_bridge_roles.register_app_role_admin(account: caller());
 
         token_bridge_roles.register_operator(account: arbitrary_account);
         assert(
-            token_bridge_roles.is_operator(account: arbitrary_account), 'register_operator failed'
+            token_bridge_roles.is_operator(account: arbitrary_account), 'register_operator failed',
         );
 
         // Validate the two Operator registration events.
@@ -446,20 +447,20 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: OPERATOR,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == OperatorAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'OperatorAdded was not emitted'
+            'OperatorAdded was not emitted',
         );
 
         token_bridge_roles.remove_operator(account: arbitrary_account);
         assert(
-            !token_bridge_roles.is_operator(account: arbitrary_account), 'remove_operator failed'
+            !token_bridge_roles.is_operator(account: arbitrary_account), 'remove_operator failed',
         );
 
         // Validate the two Operator removal events.
@@ -469,15 +470,15 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: OPERATOR,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == OperatorRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'OperatorRemoved was not emitted'
+            'OperatorRemoved was not emitted',
         );
     }
 
@@ -493,7 +494,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_token_admin(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
         // Grant the caller App Role Admin role, in order to allow him to grant Token Admin role.
         token_bridge_roles.register_app_role_admin(account: caller());
@@ -501,7 +502,7 @@ mod roles_test {
         token_bridge_roles.register_token_admin(account: arbitrary_account);
         assert(
             token_bridge_roles.is_token_admin(account: arbitrary_account),
-            'register_token_admin failed'
+            'register_token_admin failed',
         );
 
         // Validate the two Token Admin registration events.
@@ -511,21 +512,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: TOKEN_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == TokenAdminAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'TokenAdminAdded was not emitted'
+            'TokenAdminAdded was not emitted',
         );
 
         token_bridge_roles.remove_token_admin(account: arbitrary_account);
         assert(
             !token_bridge_roles.is_token_admin(account: arbitrary_account),
-            'remove_token_admin failed'
+            'remove_token_admin failed',
         );
 
         // Validate the two Token Admin removal events.
@@ -535,14 +536,14 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: TOKEN_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == TokenAdminRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'TokenAdminRemoved wasnt emitted'
+            'TokenAdminRemoved wasnt emitted',
         );
     }
 
@@ -569,7 +570,7 @@ mod roles_test {
         assert(!_roles.is_upgrade_governor(account: arbitrary_account), 'Unexpected role detected');
         _roles.register_upgrade_governor(account: arbitrary_account);
         assert(
-            _roles.is_upgrade_governor(account: arbitrary_account), 'register_upgrade_gov failed'
+            _roles.is_upgrade_governor(account: arbitrary_account), 'register_upgrade_gov failed',
         );
 
         // Validate the two Upgrade Governor registration events.
@@ -579,21 +580,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: UPGRADE_GOVERNOR,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == UpgradeGovernorAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'UpgradeGovAdded was not emitted'
+            'UpgradeGovAdded was not emitted',
         );
 
         _roles.remove_upgrade_governor(account: arbitrary_account);
         assert(
             !_roles.is_upgrade_governor(account: arbitrary_account),
-            'remove_upgrade_governor failed'
+            'remove_upgrade_governor failed',
         );
 
         // Validate the two Upgrade Governor removal events.
@@ -603,15 +604,15 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: UPGRADE_GOVERNOR,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == UpgradeGovernorRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'UpgradeGovRemoved wasnt emitted'
+            'UpgradeGovRemoved wasnt emitted',
         );
     }
 
@@ -626,12 +627,12 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_security_admin(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
         token_bridge_roles.register_security_admin(account: arbitrary_account);
         assert(
             token_bridge_roles.is_security_admin(account: arbitrary_account),
-            'register_security_admin failed'
+            'register_security_admin failed',
         );
 
         // Validate the two Upgrade Governor registration events.
@@ -641,21 +642,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: SECURITY_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == SecurityAdminAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'SecurAdminAdded was not emitted'
+            'SecurAdminAdded was not emitted',
         );
 
         token_bridge_roles.remove_security_admin(account: arbitrary_account);
         assert(
             !token_bridge_roles.is_security_admin(account: arbitrary_account),
-            'remove_security_admin failed'
+            'remove_security_admin failed',
         );
 
         // Validate the two Upgrade Governor removal events.
@@ -665,15 +666,15 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: SECURITY_ADMIN,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == SecurityAdminRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'SecurAdminRemoved wasnt emitted'
+            'SecurAdminRemoved wasnt emitted',
         );
     }
 
@@ -688,12 +689,12 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_roles.is_security_agent(account: arbitrary_account),
-            'Unexpected role detected'
+            'Unexpected role detected',
         );
         token_bridge_roles.register_security_agent(account: arbitrary_account);
         assert(
             token_bridge_roles.is_security_agent(account: arbitrary_account),
-            'register_security_agent failed'
+            'register_security_agent failed',
         );
 
         // Validate the two Upgrade Governor registration events.
@@ -703,21 +704,21 @@ mod roles_test {
             raw_event: *registration_events.at(0),
             role: SECURITY_AGENT,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let registration_emitted_event = deserialize_event(raw_event: *registration_events.at(1));
         assert(
             registration_emitted_event == SecurityAgentAdded {
-                added_account: arbitrary_account, added_by: caller()
+                added_account: arbitrary_account, added_by: caller(),
             },
-            'SecurAgentAdded was not emitted'
+            'SecurAgentAdded was not emitted',
         );
 
         token_bridge_roles.remove_security_agent(account: arbitrary_account);
         assert(
             !token_bridge_roles.is_security_agent(account: arbitrary_account),
-            'remove_security_agent failed'
+            'remove_security_agent failed',
         );
 
         // Validate the two Upgrade Governor removal events.
@@ -727,15 +728,15 @@ mod roles_test {
             raw_event: *removal_events.at(0),
             role: SECURITY_AGENT,
             account: arbitrary_account,
-            sender: caller()
+            sender: caller(),
         );
 
         let removal_emitted_event = deserialize_event(raw_event: *removal_events.at(1));
         assert(
             removal_emitted_event == SecurityAgentRemoved {
-                removed_account: arbitrary_account, removed_by: caller()
+                removed_account: arbitrary_account, removed_by: caller(),
             },
-            'SecurAgentRemoved wasnt emitted'
+            'SecurAgentRemoved wasnt emitted',
         );
     }
 
@@ -759,7 +760,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         _roles.register_upgrade_governor(account: arbitrary_account);
         assert(
-            _roles.is_upgrade_governor(account: arbitrary_account), 'register_upgrade_gov failed'
+            _roles.is_upgrade_governor(account: arbitrary_account), 'register_upgrade_gov failed',
         );
 
         starknet::testing::set_contract_address(address: arbitrary_account);
@@ -771,10 +772,10 @@ mod roles_test {
         assert(
             role_revoked_emitted_event == Event::RoleRevoked(
                 RoleRevoked {
-                    role: UPGRADE_GOVERNOR, account: arbitrary_account, sender: arbitrary_account
-                }
+                    role: UPGRADE_GOVERNOR, account: arbitrary_account, sender: arbitrary_account,
+                },
             ),
-            'RoleRevoked was not emitted'
+            'RoleRevoked was not emitted',
         );
     }
 
@@ -808,7 +809,7 @@ mod roles_test {
     }
 
     #[test]
-    #[should_panic(expected: ('GOV_ADMIN_CANNOT_SELF_REMOVE', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('GOV_ADMIN_CANNOT_SELF_REMOVE', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_renounce_governance_admin() {
         // Deploy the token bridge. As part of it, the caller becomes the Governance Admin.
@@ -817,7 +818,7 @@ mod roles_test {
     }
 
     #[test]
-    #[should_panic(expected: ('GOV_ADMIN_CANNOT_SELF_REMOVE', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('GOV_ADMIN_CANNOT_SELF_REMOVE', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_locakable_renounce_governance_admin() {
         let contract_address = simple_deploy_lockable_token();
@@ -858,10 +859,10 @@ mod roles_test {
         // funcitons later.
         starknet::testing::set_contract_address(address: contract_address);
         TokenBridge::InternalAccessControl::_set_role_admin(
-            ref token_bridge_state, role: arbitrary_role, admin_role: admin_of_arbitrary_role
+            ref token_bridge_state, role: arbitrary_role, admin_role: admin_of_arbitrary_role,
         );
         TokenBridge::InternalAccessControl::_grant_role(
-            ref token_bridge_state, role: admin_of_arbitrary_role, account: caller()
+            ref token_bridge_state, role: admin_of_arbitrary_role, account: caller(),
         );
 
         // Set the contract address to be the caller, as we are calling a function from the
@@ -870,7 +871,7 @@ mod roles_test {
         let arbitrary_account = not_caller();
         assert(
             !token_bridge_acess_control.has_role(role: arbitrary_role, account: arbitrary_account),
-            'Account should not have role'
+            'Account should not have role',
         );
 
         // Set caller address for the _grant_role_and_emit.
@@ -888,7 +889,7 @@ mod roles_test {
             ref token_bridge_state,
             role: arbitrary_role,
             account: arbitrary_account,
-            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role)
+            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role),
         );
 
         // Set the contract address to be the caller, as we are calling a function from the
@@ -896,16 +897,16 @@ mod roles_test {
         set_contract_address_as_caller();
         assert(
             token_bridge_acess_control.has_role(role: arbitrary_role, account: arbitrary_account),
-            'grant_role to account failed'
+            'grant_role to account failed',
         );
 
         // Validate event emission.
         let arbitrary_emitted_event = pop_and_deserialize_last_event(address: contract_address);
         assert(
             arbitrary_emitted_event == RoleAdminChanged {
-                role, previous_admin_role, new_admin_role
+                role, previous_admin_role, new_admin_role,
             },
-            'Arbitrary event was not emitted'
+            'Arbitrary event was not emitted',
         );
 
         // Uneventful success in redundant registration.
@@ -916,7 +917,7 @@ mod roles_test {
             ref token_bridge_state,
             role: arbitrary_role,
             account: arbitrary_account,
-            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role)
+            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role),
         );
         validate_empty_event_queue(address: contract_address);
     }
@@ -936,7 +937,7 @@ mod roles_test {
             ref token_bridge_state,
             role: arbitrary_role,
             account: zero_account,
-            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role)
+            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role),
         );
     }
     // Tests the functionality of the internal function revoke_role_and_emit which is commonly used
@@ -968,15 +969,15 @@ mod roles_test {
         // funcitons later.
         starknet::testing::set_contract_address(address: contract_address);
         TokenBridge::InternalAccessControl::_set_role_admin(
-            ref token_bridge_state, role: arbitrary_role, admin_role: admin_of_arbitrary_role
+            ref token_bridge_state, role: arbitrary_role, admin_role: admin_of_arbitrary_role,
         );
         TokenBridge::InternalAccessControl::_grant_role(
-            ref token_bridge_state, role: admin_of_arbitrary_role, account: caller()
+            ref token_bridge_state, role: admin_of_arbitrary_role, account: caller(),
         );
 
         let arbitrary_account = not_caller();
         TokenBridge::InternalAccessControl::_grant_role(
-            ref token_bridge_state, role: arbitrary_role, account: arbitrary_account
+            ref token_bridge_state, role: arbitrary_role, account: arbitrary_account,
         );
 
         // Set the contract address to be the caller, as we are calling a function from the
@@ -984,7 +985,7 @@ mod roles_test {
         set_contract_address_as_caller();
         assert(
             token_bridge_acess_control.has_role(role: arbitrary_role, account: arbitrary_account),
-            'grant_role to account failed'
+            'grant_role to account failed',
         );
         // Set caller address for the _revoke_role_and_emit.
         starknet::testing::set_caller_address(address: caller());
@@ -1001,7 +1002,7 @@ mod roles_test {
             ref token_bridge_state,
             role: arbitrary_role,
             account: arbitrary_account,
-            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role)
+            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role),
         );
 
         // Set the contract address to be the caller, as we are calling a function from the
@@ -1009,16 +1010,16 @@ mod roles_test {
         set_contract_address_as_caller();
         assert(
             !token_bridge_acess_control.has_role(role: arbitrary_role, account: arbitrary_account),
-            'Revoke role failed'
+            'Revoke role failed',
         );
 
         // Validate event emission.
         let arbitrary_emitted_event = pop_and_deserialize_last_event(address: contract_address);
         assert(
             arbitrary_emitted_event == RoleAdminChanged {
-                role, previous_admin_role, new_admin_role
+                role, previous_admin_role, new_admin_role,
             },
-            'Arbitrary event was not emitted'
+            'Arbitrary event was not emitted',
         );
 
         // Uneventful success in redundant removal.
@@ -1029,7 +1030,7 @@ mod roles_test {
             ref token_bridge_state,
             role: arbitrary_role,
             account: arbitrary_account,
-            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role)
+            event: arbitrary_event(:role, :previous_admin_role, :new_admin_role),
         );
         validate_empty_event_queue(address: contract_address);
     }
@@ -1042,39 +1043,39 @@ mod roles_test {
         // Validate that by default, 0 is the role admin of all roles.
         assert(
             TokenBridge::AccessControlImplExternal::get_role_admin(
-                @token_bridge_state, role: APP_GOVERNOR
+                @token_bridge_state, role: APP_GOVERNOR,
             ) == 0,
-            '0 should be default role admin'
+            '0 should be default role admin',
         );
         assert(
             TokenBridge::AccessControlImplExternal::get_role_admin(
-                @token_bridge_state, role: APP_ROLE_ADMIN
+                @token_bridge_state, role: APP_ROLE_ADMIN,
             ) == 0,
-            '0 should be default role admin'
+            '0 should be default role admin',
         );
         assert(
             TokenBridge::AccessControlImplExternal::get_role_admin(
-                @token_bridge_state, role: GOVERNANCE_ADMIN
+                @token_bridge_state, role: GOVERNANCE_ADMIN,
             ) == 0,
-            '0 should be default role admin'
+            '0 should be default role admin',
         );
         assert(
             TokenBridge::AccessControlImplExternal::get_role_admin(
-                @token_bridge_state, role: OPERATOR
+                @token_bridge_state, role: OPERATOR,
             ) == 0,
-            '0 should be default role admin'
+            '0 should be default role admin',
         );
         assert(
             TokenBridge::AccessControlImplExternal::get_role_admin(
-                @token_bridge_state, role: TOKEN_ADMIN
+                @token_bridge_state, role: TOKEN_ADMIN,
             ) == 0,
-            '0 should be default role admin'
+            '0 should be default role admin',
         );
         assert(
             TokenBridge::AccessControlImplExternal::get_role_admin(
-                @token_bridge_state, role: UPGRADE_GOVERNOR
+                @token_bridge_state, role: UPGRADE_GOVERNOR,
             ) == 0,
-            '0 should be default role admin'
+            '0 should be default role admin',
         );
 
         // deploy_token_bridge calls the constructor which calls _initialize_roles.
@@ -1084,33 +1085,33 @@ mod roles_test {
         // Validate that provisional_governance_admin is the GOVERNANCE_ADMIN.
         assert(
             token_bridge_acess_control.has_role(role: GOVERNANCE_ADMIN, account: caller()),
-            'grant_role to account failed'
+            'grant_role to account failed',
         );
 
         // Validate that each role has the right role admin.
         assert(
             token_bridge_acess_control.get_role_admin(role: APP_GOVERNOR) == APP_ROLE_ADMIN,
-            'Expected APP_ROLE_ADMIN'
+            'Expected APP_ROLE_ADMIN',
         );
         assert(
             token_bridge_acess_control.get_role_admin(role: APP_ROLE_ADMIN) == GOVERNANCE_ADMIN,
-            'Expected GOVERNANCE_ADMIN'
+            'Expected GOVERNANCE_ADMIN',
         );
         assert(
             token_bridge_acess_control.get_role_admin(role: GOVERNANCE_ADMIN) == GOVERNANCE_ADMIN,
-            'Expected GOVERNANCE_ADMIN'
+            'Expected GOVERNANCE_ADMIN',
         );
         assert(
             token_bridge_acess_control.get_role_admin(role: OPERATOR) == APP_ROLE_ADMIN,
-            'Expected APP_ROLE_ADMIN'
+            'Expected APP_ROLE_ADMIN',
         );
         assert(
             token_bridge_acess_control.get_role_admin(role: TOKEN_ADMIN) == APP_ROLE_ADMIN,
-            'Expected APP_ROLE_ADMIN'
+            'Expected APP_ROLE_ADMIN',
         );
         assert(
             token_bridge_acess_control.get_role_admin(role: UPGRADE_GOVERNOR) == GOVERNANCE_ADMIN,
-            'Expected GOVERNANCE_ADMIN'
+            'Expected GOVERNANCE_ADMIN',
         );
     }
 
@@ -1124,16 +1125,16 @@ mod roles_test {
         // Validate that provisional_governance_admin is the GOVERNANCE_ADMIN.
         assert(
             _acess_control.has_role(role: GOVERNANCE_ADMIN, account: caller()),
-            'grant_role to account failed'
+            'grant_role to account failed',
         );
 
         assert(
             _acess_control.get_role_admin(role: GOVERNANCE_ADMIN) == GOVERNANCE_ADMIN,
-            'Expected GOVERNANCE_ADMIN'
+            'Expected GOVERNANCE_ADMIN',
         );
         assert(
             _acess_control.get_role_admin(role: UPGRADE_GOVERNOR) == GOVERNANCE_ADMIN,
-            'Expected GOVERNANCE_ADMIN'
+            'Expected GOVERNANCE_ADMIN',
         );
     }
 

@@ -2,7 +2,7 @@
 #[starknet::contract]
 mod SetAsSingleEIC {
     use starknet::{
-        ContractAddress, get_caller_address, EthAddress, EthAddressIntoFelt252, EthAddressSerde
+        ContractAddress, get_caller_address, EthAddress, EthAddressIntoFelt252, EthAddressSerde,
     };
     use src::erc20_interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use src::replaceability_interface::IEICInitializable;
@@ -11,8 +11,8 @@ mod SetAsSingleEIC {
     struct Storage {
         // --- Token Bridge ---
         // Mapping from between l1<->l2 token addresses.
-        l1_l2_token_map: LegacyMap<EthAddress, ContractAddress>,
-        l2_l1_token_map: LegacyMap<ContractAddress, EthAddress>,
+        l1_l2_token_map: starknet::storage::Map<EthAddress, ContractAddress>,
+        l2_l1_token_map: starknet::storage::Map<ContractAddress, EthAddress>,
         // `l2_token` is a legacy storage variable from older versions.
         // It should be written to as well to prevent multiple init, making the bridge a single.
         // and also to support legact L1-L2 msgs.
@@ -33,7 +33,7 @@ mod SetAsSingleEIC {
     #[generate_trait]
     impl internals of _internals {
         fn setup_l1_l2_mappings(
-            ref self: ContractState, l1_token: EthAddress, l2_token: ContractAddress
+            ref self: ContractState, l1_token: EthAddress, l2_token: ContractAddress,
         ) {
             assert(self.l2_token.read().is_zero(), 'L2_BRIDGE_ALREADY_INITIALIZED');
             assert(l1_token.is_non_zero(), 'ZERO_L1_TOKEN');

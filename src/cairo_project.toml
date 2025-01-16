@@ -1,3 +1,12 @@
 [crate_roots]
 src = "cairo"
 openzeppelin = "openzeppelin"
+
+[config.global]
+edition = "2023_01"
+
+[config.global.dependencies.openzeppelin]
+discriminator = "openzeppelin"
+
+[config.global.dependencies.src]
+discriminator = "src"

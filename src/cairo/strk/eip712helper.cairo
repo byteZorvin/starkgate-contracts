@@ -43,7 +43,7 @@ fn lock_and_delegate_input_hash(
     delegatee: ContractAddress, amount: u256, nonce: felt252, expiry: u64,
 ) -> felt252 {
     let mut lock_and_delegate_inputs = array![
-        LOCK_AND_DELEGATE_TYPE_HASH, delegatee.into(), amount.low.into(), nonce, expiry.into()
+        LOCK_AND_DELEGATE_TYPE_HASH, delegatee.into(), amount.low.into(), nonce, expiry.into(),
     ]
         .span();
     pedersen_hash_span(elements: lock_and_delegate_inputs)
@@ -51,7 +51,7 @@ fn lock_and_delegate_input_hash(
 
 fn calc_domain_hash() -> felt252 {
     let mut domain_state_inputs = array![
-        STARKNET_DOMAIN_TYPE_HASH, DAPP_NAME, DAPP_VERSION, get_tx_info().unbox().chain_id
+        STARKNET_DOMAIN_TYPE_HASH, DAPP_NAME, DAPP_VERSION, get_tx_info().unbox().chain_id,
     ]
         .span();
     pedersen_hash_span(elements: domain_state_inputs)

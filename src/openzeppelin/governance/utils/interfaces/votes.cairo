@@ -30,6 +30,6 @@ trait IVotes<TState> {
         delegatee: ContractAddress,
         nonce: felt252,
         expiry: u64,
-        signature: Array<felt252>
+        signature: Array<felt252>,
     );
 }

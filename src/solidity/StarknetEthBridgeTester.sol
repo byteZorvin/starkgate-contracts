@@ -23,4 +23,8 @@ contract StarknetEthBridgeTester is StarknetEthBridge {
     function setTokenStatus(address token, TokenStatus status) external {
         tokenSettings()[token].tokenStatus = status;
     }
+
+    function setBridgedToken(address contract_) external {
+        NamedStorage.setAddressValueOnce(BRIDGED_TOKEN_TAG, contract_);
+    }
 }

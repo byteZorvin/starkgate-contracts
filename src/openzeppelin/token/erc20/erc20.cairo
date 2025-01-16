@@ -9,7 +9,6 @@
 //! A derived contract can use [_mint](_mint) to create a different supply mechanism.
 #[starknet::contract]
 mod ERC20 {
-    use integer::BoundedInt;
     use openzeppelin::token::erc20::interface::IERC20;
     use openzeppelin::token::erc20::interface::IERC20CamelOnly;
     use starknet::ContractAddress;
@@ -21,8 +20,8 @@ mod ERC20 {
         ERC20_symbol: felt252,
         ERC20_decimals: u8,
         ERC20_total_supply: u256,
-        ERC20_balances: LegacyMap<ContractAddress, u256>,
-        ERC20_allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
+        ERC20_balances: starknet::storage::Map<ContractAddress, u256>,
+        ERC20_allowances: starknet::storage::Map<(ContractAddress, ContractAddress), u256>,
     }
 
     #[event]
@@ -35,22 +34,22 @@ mod ERC20 {
     /// Emitted when tokens are moved from address `from` to address `to`.
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct Transfer {
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         from: ContractAddress,
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         to: ContractAddress,
-        value: u256
+        value: u256,
     }
 
     /// Emitted when the allowance of a `spender` for an `owner` is set by a call
     /// to [approve](approve). `value` is the new allowance.
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct Approval {
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         owner: ContractAddress,
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         spender: ContractAddress,
-        value: u256
+        value: u256,
     }
 
     mod Errors {
@@ -69,11 +68,17 @@ mod ERC20 {
     #[generate_trait]
     impl ERC20HooksImpl of ERC20HooksTrait {
         fn _before_update(
-            ref self: ContractState, from: ContractAddress, recipient: ContractAddress, amount: u256
+            ref self: ContractState,
+            from: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256,
         ) {}
 
         fn _after_update(
-            ref self: ContractState, from: ContractAddress, recipient: ContractAddress, amount: u256
+            ref self: ContractState,
+            from: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256,
         ) {}
     }
 
@@ -86,7 +91,7 @@ mod ERC20 {
         symbol: felt252,
         decimals: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.initializer(name, symbol, decimals);
         self._mint(recipient, initial_supply);
@@ -129,7 +134,7 @@ mod ERC20 {
         /// This value changes when [approve](approve) or [transfer_from](transfer_from)
         /// are called.
         fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress,
         ) -> u256 {
             self.ERC20_allowances.read((owner, spender))
         }
@@ -149,7 +154,7 @@ mod ERC20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) -> bool {
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
@@ -169,7 +174,7 @@ mod ERC20 {
     /// Emits an [Approval](Approval) event indicating the updated allowance.
     #[external(v0)]
     fn increase_allowance(
-        ref self: ContractState, spender: ContractAddress, added_value: u256
+        ref self: ContractState, spender: ContractAddress, added_value: u256,
     ) -> bool {
         self._increase_allowance(spender, added_value)
     }
@@ -178,7 +183,7 @@ mod ERC20 {
     /// Emits an [Approval](Approval) event indicating the updated allowance.
     #[external(v0)]
     fn decrease_allowance(
-        ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ref self: ContractState, spender: ContractAddress, subtracted_value: u256,
     ) -> bool {
         self._decrease_allowance(spender, subtracted_value)
     }
@@ -203,7 +208,7 @@ mod ERC20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) -> bool {
             ERC20Impl::transfer_from(ref self, sender, recipient, amount)
         }
@@ -213,7 +218,7 @@ mod ERC20 {
     /// See [increase_allowance](increase_allowance).
     #[external(v0)]
     fn increaseAllowance(
-        ref self: ContractState, spender: ContractAddress, addedValue: u256
+        ref self: ContractState, spender: ContractAddress, addedValue: u256,
     ) -> bool {
         increase_allowance(ref self, spender, addedValue)
     }
@@ -222,7 +227,7 @@ mod ERC20 {
     /// See [decrease_allowance](decrease_allowance).
     #[external(v0)]
     fn decreaseAllowance(
-        ref self: ContractState, spender: ContractAddress, subtractedValue: u256
+        ref self: ContractState, spender: ContractAddress, subtractedValue: u256,
     ) -> bool {
         decrease_allowance(ref self, spender, subtractedValue)
     }
@@ -247,7 +252,7 @@ mod ERC20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!sender.is_zero(), Errors::TRANSFER_FROM_ZERO);
             assert(!recipient.is_zero(), Errors::TRANSFER_TO_ZERO);
@@ -258,7 +263,7 @@ mod ERC20 {
         /// `owner`s tokens.
         /// Emits an [Approval](Approval) event.
         fn _approve(
-            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         ) {
             assert(!owner.is_zero(), Errors::APPROVE_FROM_ZERO);
             assert(!spender.is_zero(), Errors::APPROVE_TO_ZERO);
@@ -269,7 +274,7 @@ mod ERC20 {
         /// Creates a `value` amount of tokens and assigns them to `account`.
         /// Emits a [Transfer](Transfer) event with `from` set to the zero address.
         fn _mint<impl Hooks: ERC20HooksTrait>(
-            ref self: ContractState, recipient: ContractAddress, amount: u256
+            ref self: ContractState, recipient: ContractAddress, amount: u256,
         ) {
             assert(!recipient.is_zero(), Errors::MINT_TO_ZERO);
             self._update::<Hooks>(Zeroable::zero(), recipient, amount);
@@ -278,7 +283,7 @@ mod ERC20 {
         /// Destroys a `value` amount of tokens from `account`.
         /// Emits a [Transfer](Transfer) event with `to` set to the zero address.
         fn _burn<impl Hooks: ERC20HooksTrait>(
-            ref self: ContractState, account: ContractAddress, amount: u256
+            ref self: ContractState, account: ContractAddress, amount: u256,
         ) {
             assert(!account.is_zero(), Errors::BURN_FROM_ZERO);
             self._update::<Hooks>(account, Zeroable::zero(), amount);
@@ -287,12 +292,12 @@ mod ERC20 {
         /// Internal method for the external [increase_allowance](increase_allowance).
         /// Emits an [Approval](Approval) event indicating the updated allowance.
         fn _increase_allowance(
-            ref self: ContractState, spender: ContractAddress, added_value: u256
+            ref self: ContractState, spender: ContractAddress, added_value: u256,
         ) -> bool {
             let caller = get_caller_address();
             self
                 ._approve(
-                    caller, spender, self.ERC20_allowances.read((caller, spender)) + added_value
+                    caller, spender, self.ERC20_allowances.read((caller, spender)) + added_value,
                 );
             true
         }
@@ -300,14 +305,14 @@ mod ERC20 {
         /// Internal method for the external [decrease_allowance](decrease_allowance).
         /// Emits an [Approval](Approval) event indicating the updated allowance.
         fn _decrease_allowance(
-            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256,
         ) -> bool {
             let caller = get_caller_address();
             self
                 ._approve(
                     caller,
                     spender,
-                    self.ERC20_allowances.read((caller, spender)) - subtracted_value
+                    self.ERC20_allowances.read((caller, spender)) - subtracted_value,
                 );
             true
         }
@@ -316,10 +321,10 @@ mod ERC20 {
         /// Does not update the allowance value in case of infinite allowance.
         /// Possibly emits an [Approval](Approval) event.
         fn _spend_allowance(
-            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         ) {
             let current_allowance = self.ERC20_allowances.read((owner, spender));
-            if current_allowance != BoundedInt::max() {
+            if current_allowance != core::num::traits::Bounded::MAX {
                 self._approve(owner, spender, current_allowance - amount);
             }
         }
@@ -328,7 +333,7 @@ mod ERC20 {
         // (or burns) if `from` (or `to`) is the zero address. All customizations to transfers,
         // mints, and burns should be done by overriding this function.
         fn _update<impl Hooks: ERC20HooksTrait>(
-            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256,
         ) {
             Hooks::_before_update(ref self, from, to, amount);
 

@@ -4,16 +4,16 @@ use option::OptionTrait;
 
 use starknet::class_hash::{ClassHash, Felt252TryIntoClassHash};
 
-// Holds EIC data. 
+// Holds EIC data.
 // * eic_hash is the EIC class hash.
 // * eic_init_data is a span of the EIC init args.
 #[derive(Copy, Drop, Serde, PartialEq)]
 struct EICData {
     eic_hash: ClassHash,
-    eic_init_data: Span<felt252>
+    eic_init_data: Span<felt252>,
 }
 
-// Holds implementation data. 
+// Holds implementation data.
 // * impl_hash is the implementation class hash.
 // * eic_data is the EIC data when applicable, and empty otherwise.
 // * final indicates whether the implementation is finalized.
@@ -21,7 +21,7 @@ struct EICData {
 struct ImplementationData {
     impl_hash: ClassHash,
     eic_data: Option<EICData>,
-    final: bool
+    final: bool,
 }
 
 
@@ -42,7 +42,7 @@ trait IEICInitializable<TContractState> {
 trait IReplaceable<TContractState> {
     fn get_upgrade_delay(self: @TContractState) -> u64;
     fn get_impl_activation_time(
-        self: @TContractState, implementation_data: ImplementationData
+        self: @TContractState, implementation_data: ImplementationData,
     ) -> u64;
     fn add_new_implementation(ref self: TContractState, implementation_data: ImplementationData);
     fn remove_implementation(ref self: TContractState, implementation_data: ImplementationData);

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod lockable_token_test {
     use starknet::ContractAddress;
-    use integer::BoundedInt;
+    use core::num::traits::Bounded;
     use serde::Serde;
     use src::erc20_interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use src::test_utils::test_utils::{
@@ -9,11 +9,11 @@ mod lockable_token_test {
         arbitrary_address, arbitrary_user, deploy_lock_and_votes_tokens,
         deploy_lock_and_votes_tokens_with_owner, get_locking_contract_interface, not_caller,
         deploy_account, get_erc20_votes_token, deploy_lockable_token,
-        get_lock_and_delegate_interface
+        get_lock_and_delegate_interface,
     };
     use src::mintable_lock_interface::{
         ILockingContract, ILockingContractDispatcher, ILockingContractDispatcherTrait,
-        ILockAndDelegate, ILockAndDelegateDispatcher, ILockAndDelegateDispatcherTrait
+        ILockAndDelegate, ILockAndDelegateDispatcher, ILockAndDelegateDispatcherTrait,
     };
 
     // The account address is taken into account in eip-712 signature.
@@ -21,7 +21,7 @@ mod lockable_token_test {
     // This fixture helps identifying this right away.
     fn expected_account_address() -> ContractAddress {
         starknet::contract_address_const::<
-            0x64197b5827b3c126bfa2dafc484f220b7a5d8d35ebabfdcffa6370b262fa643
+            0x6bcbcd04907ee2a876635cac8a638a8bf24c42b8825ccd24a63e551c89f4ef1,
         >()
     }
 
@@ -30,7 +30,7 @@ mod lockable_token_test {
         deploy_lockable_token(:initial_owner, initial_supply: 1000_u256)
     }
     use openzeppelin::governance::utils::interfaces::votes::{
-        IVotesDispatcher, IVotesDispatcherTrait
+        IVotesDispatcher, IVotesDispatcherTrait,
     };
 
     fn set_locking_contract(lockable_token: ContractAddress, locking_contract: ContractAddress) {
@@ -40,7 +40,7 @@ mod lockable_token_test {
 
     // Sets the caller as the upgrade governor and then set the locking contract.
     fn prepare_and_set_locking_contract(
-        lockable_token: ContractAddress, locking_contract: ContractAddress
+        lockable_token: ContractAddress, locking_contract: ContractAddress,
     ) {
         set_caller_as_upgrade_governor(replaceable_address: lockable_token);
         set_locking_contract(:lockable_token, :locking_contract);
@@ -48,7 +48,7 @@ mod lockable_token_test {
 
 
     fn lock_and_delegate(
-        lockable_token: ContractAddress, delegatee: ContractAddress, amount: u256
+        lockable_token: ContractAddress, delegatee: ContractAddress, amount: u256,
     ) {
         let lock_and_delegate_interface = get_lock_and_delegate_interface(l2_token: lockable_token);
         lock_and_delegate_interface.lock_and_delegate(:delegatee, :amount);
@@ -61,7 +61,7 @@ mod lockable_token_test {
         amount: u256,
         nonce: felt252,
         expiry: u64,
-        signature: Array<felt252>
+        signature: Array<felt252>,
     ) {
         let lock_and_delegate_interface = get_lock_and_delegate_interface(l2_token: lockable_token);
         lock_and_delegate_interface
@@ -75,7 +75,7 @@ mod lockable_token_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_failed_set_locking_contract_not_upgrade_governor() {
         let lockable_token = deploy_testing_lockable_token();
@@ -83,18 +83,18 @@ mod lockable_token_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ZERO_ADDRESS', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ZERO_ADDRESS', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_failed_set_locking_contract_zero_address() {
         let lockable_token = deploy_testing_lockable_token();
         let zero_locking_contract_address = starknet::contract_address_const::<0>();
         prepare_and_set_locking_contract(
-            :lockable_token, locking_contract: zero_locking_contract_address
+            :lockable_token, locking_contract: zero_locking_contract_address,
         );
     }
 
     #[test]
-    #[should_panic(expected: ('LOCKING_CONTRACT_ALREADY_SET', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('LOCKING_CONTRACT_ALREADY_SET', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_failed_set_locking_contract_already_set() {
         let lockable_token = deploy_testing_lockable_token();
@@ -117,7 +117,7 @@ mod lockable_token_test {
     }
 
     #[test]
-    #[should_panic(expected: ('LOCKING_CONTRACT_NOT_SET', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('LOCKING_CONTRACT_NOT_SET', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_failed_lock_and_delegate_not_set() {
         let lockable_token = deploy_testing_lockable_token();
@@ -141,10 +141,10 @@ mod lockable_token_test {
         // balance of the votes token.
         assert(
             erc20_lockable_interface.balance_of(account: caller()) == initial_supply,
-            'BAD_BALANCE_TEST_SETUP'
+            'BAD_BALANCE_TEST_SETUP',
         );
         assert(
-            erc20_votes_lock_interface.balance_of(account: caller()) == 0, 'BAD_BALANCE_TEST_SETUP'
+            erc20_votes_lock_interface.balance_of(account: caller()) == 0, 'BAD_BALANCE_TEST_SETUP',
         );
 
         let delegatee = arbitrary_user();
@@ -155,17 +155,18 @@ mod lockable_token_test {
         assert(erc20_lockable_interface.balance_of(account: caller()) == 0, 'UNEXPECTED_BALANCE');
         assert(
             erc20_votes_lock_interface.balance_of(account: caller()) == initial_supply,
-            'UNEXPECTED_BALANCE'
+            'UNEXPECTED_BALANCE',
         );
         // Verify that the votes_lock_token has balance of initial_supply for the locked token.
         assert(
             erc20_lockable_interface.balance_of(account: votes_lock_token) == initial_supply,
-            'UNEXPECTED_BALANCE'
+            'UNEXPECTED_BALANCE',
         );
 
         let erc20_votes_token_interface = get_erc20_votes_token(l2_token: votes_lock_token);
         assert(
-            erc20_votes_token_interface.delegates(account: caller()) == delegatee, 'DELEGATE_FAILED'
+            erc20_votes_token_interface.delegates(account: caller()) == delegatee,
+            'DELEGATE_FAILED',
         );
     }
 
@@ -174,7 +175,7 @@ mod lockable_token_test {
     #[should_panic(
         expected: (
             'u256_sub Overflow', 'ENTRYPOINT_FAILED', 'ENTRYPOINT_FAILED', 'ENTRYPOINT_FAILED',
-        )
+        ),
     )]
     fn test_lock_and_delegate_underflow() {
         let initial_supply = 1000_u256;
@@ -188,19 +189,19 @@ mod lockable_token_test {
         lock_and_delegate(:lockable_token, :delegatee, amount: initial_supply + 1);
     }
 
-    // Tests that the lock_and_delegate function can handle BoundedInt::max.
+    // Tests that the lock_and_delegate function can handle Bounded::MAX.
     #[test]
     #[available_gas(30000000)]
     fn test_lock_and_delegate_max_bounded_int() {
-        let initial_supply = BoundedInt::max();
+        let initial_supply = Bounded::MAX;
         let (lockable_token, votes_lock_token) = deploy_lock_and_votes_tokens(:initial_supply);
 
         // Store votes_lock_token as the locking contract.
         prepare_and_set_locking_contract(:lockable_token, locking_contract: votes_lock_token);
 
-        // Caller try to delegate all his balance which is BoundedInt::max.
+        // Caller try to delegate all his balance which is Bounded::MAX.
         let delegatee = arbitrary_user();
-        lock_and_delegate(:lockable_token, :delegatee, amount: BoundedInt::max());
+        lock_and_delegate(:lockable_token, :delegatee, amount: Bounded::MAX);
     }
 
     fn get_initial_supply() -> u256 {
@@ -214,8 +215,8 @@ mod lockable_token_test {
 
     fn get_delegation_sig() -> Array<felt252> {
         array![
-            0x341ec075225ded67c66680e4226e1c4ad261074df0434af59720b0117086e17,
-            0x767ef0ec64bde505563961eba498fffef6b55201e0e4db7d6e2e51ee7d3a6fd
+            0x6899fc7b5198447f4edc10b9f0399f4a1678aef1b7882716c3709df0d0b2d76,
+            0x4914672f085dd962138324dd4300efceee9666743ee4d0bbc535eb95aace777,
         ]
     }
 
@@ -243,11 +244,14 @@ mod lockable_token_test {
 
         // Account setup.
         let account_address = deploy_account(public_key: get_account_public_key());
+
+        // The signature is dependent on the address.
+        // If it's not the expected address, signature validation will fail.
         assert(account_address == expected_account_address(), 'ACCOUNT_ADDRESS_CHANGED');
 
         // Lockable token contract setup.
         let (lockable_token, votes_lock_token) = deploy_lock_and_votes_tokens_with_owner(
-            initial_owner: account_address, initial_supply: get_initial_supply()
+            initial_owner: account_address, initial_supply: get_initial_supply(),
         );
 
         prepare_and_set_locking_contract(:lockable_token, locking_contract: votes_lock_token);
@@ -262,27 +266,27 @@ mod lockable_token_test {
             amount: get_initial_supply(),
             nonce: get_nonce(),
             expiry: get_expiry(),
-            signature: get_delegation_sig()
+            signature: get_delegation_sig(),
         );
 
         // Validate delegation success.
         let erc20_votes_token_interface = get_erc20_votes_token(l2_token: votes_lock_token);
         assert(
             erc20_votes_token_interface.delegates(account: account_address) == get_delegatee(),
-            'DELEGATE_FAILED'
+            'DELEGATE_FAILED',
         );
     }
 
 
     #[test]
-    #[should_panic(expected: ('SIGNATURE_EXPIRED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('SIGNATURE_EXPIRED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_lock_and_delegate_by_sig_expired() {
         starknet::testing::set_block_timestamp(get_expiry() + 1);
 
         // Lockable token contract setup.
         let (lockable_token, votes_lock_token) = deploy_lock_and_votes_tokens(
-            initial_supply: get_initial_supply()
+            initial_supply: get_initial_supply(),
         );
 
         prepare_and_set_locking_contract(:lockable_token, locking_contract: votes_lock_token);
@@ -295,12 +299,12 @@ mod lockable_token_test {
             amount: get_initial_supply(),
             nonce: get_nonce(),
             expiry: get_expiry(),
-            signature: get_delegation_sig()
+            signature: get_delegation_sig(),
         );
     }
 
     #[test]
-    #[should_panic(expected: ('SIGNED_REQUEST_ALREADY_USED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('SIGNED_REQUEST_ALREADY_USED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_lock_and_delegate_by_sig_request_replay() {
         // Set chain id.
@@ -308,11 +312,14 @@ mod lockable_token_test {
 
         // Account setup.
         let account_address = deploy_account(public_key: get_account_public_key());
+
+        // The signature is dependent on the address.
+        // If it's not the expected address, signature validation will fail.
         assert(account_address == expected_account_address(), 'ACCOUNT_ADDRESS_CHANGED');
 
         // Lockable token contract setup.
         let (lockable_token, votes_lock_token) = deploy_lock_and_votes_tokens_with_owner(
-            initial_owner: account_address, initial_supply: get_initial_supply()
+            initial_owner: account_address, initial_supply: get_initial_supply(),
         );
 
         prepare_and_set_locking_contract(:lockable_token, locking_contract: votes_lock_token);
@@ -325,7 +332,7 @@ mod lockable_token_test {
             amount: get_initial_supply(),
             nonce: get_nonce(),
             expiry: 123456,
-            signature: get_delegation_sig()
+            signature: get_delegation_sig(),
         );
 
         // Invoke delegation with signature again.
@@ -336,12 +343,12 @@ mod lockable_token_test {
             amount: get_initial_supply(),
             nonce: get_nonce(),
             expiry: get_expiry(),
-            signature: get_delegation_sig()
+            signature: get_delegation_sig(),
         );
     }
 
     #[test]
-    #[should_panic(expected: ('SIGNATURE_VALIDATION_FAILED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('SIGNATURE_VALIDATION_FAILED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_lock_and_delegate_by_sig_invalid_sig() {
         // Set chain id.
@@ -349,11 +356,14 @@ mod lockable_token_test {
 
         // Account setup.
         let account_address = deploy_account(public_key: get_account_public_key());
+
+        // The signature is dependent on the address.
+        // If it's not the expected address, signature validation will fail.
         assert(account_address == expected_account_address(), 'ACCOUNT_ADDRESS_CHANGED');
 
         // Lockable token contract setup.
         let (lockable_token, votes_lock_token) = deploy_lock_and_votes_tokens_with_owner(
-            initial_owner: account_address, initial_supply: get_initial_supply()
+            initial_owner: account_address, initial_supply: get_initial_supply(),
         );
 
         prepare_and_set_locking_contract(:lockable_token, locking_contract: votes_lock_token);
@@ -369,7 +379,7 @@ mod lockable_token_test {
             amount: get_initial_supply(),
             nonce: get_nonce() + 1,
             expiry: get_expiry(),
-            signature: get_delegation_sig()
+            signature: get_delegation_sig(),
         );
     }
 }

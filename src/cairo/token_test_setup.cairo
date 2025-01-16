@@ -15,8 +15,8 @@ mod TokenTestSetup {
     #[storage]
     struct Storage {
         l2_token: ContractAddress,
-        l1_l2_token_map: LegacyMap<EthAddress, ContractAddress>,
-        l2_l1_token_map: LegacyMap<ContractAddress, EthAddress>,
+        l1_l2_token_map: starknet::storage::Map<EthAddress, ContractAddress>,
+        l2_l1_token_map: starknet::storage::Map<ContractAddress, EthAddress>,
     }
 
     #[external(v0)]
@@ -24,13 +24,13 @@ mod TokenTestSetup {
         ref self: ContractState,
         l1_token: EthAddress,
         l2_token: ContractAddress,
-        l2_token_for_mapping: ContractAddress
+        l2_token_for_mapping: ContractAddress,
     ) {
         self.l2_token.write(l2_token);
         self.l1_l2_token_map.write(l1_token, l2_token_for_mapping);
         self.l2_l1_token_map.write(l2_token_for_mapping, l1_token);
         let result = starknet::replace_class_syscall(
-            TokenBridge::TEST_CLASS_HASH.try_into().unwrap()
+            TokenBridge::TEST_CLASS_HASH.try_into().unwrap(),
         );
         assert(result.is_ok(), 'REPLACE_CLASS_HASH_FAILED');
     }

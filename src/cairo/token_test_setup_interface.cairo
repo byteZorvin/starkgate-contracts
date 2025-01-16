@@ -6,6 +6,6 @@ trait ITokenTestSetup<TContractState> {
         ref self: TContractState,
         l1_token: EthAddress,
         l2_token: ContractAddress,
-        l2_token_for_mapping: ContractAddress
+        l2_token_for_mapping: ContractAddress,
     );
 }

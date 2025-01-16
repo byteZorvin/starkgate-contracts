@@ -6,7 +6,7 @@ mod EIP712 {
     #[storage]
     struct Storage {
         EIP712_name: felt252,
-        EIP712_version: felt252
+        EIP712_version: felt252,
     }
 
     #[external(v0)]

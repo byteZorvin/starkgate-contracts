@@ -40,7 +40,7 @@ mod replaceability_test {
     use openzeppelin::token::erc20_v070::erc20::ERC20;
     use openzeppelin::token::erc20_v070::erc20::ERC20::{
         Event, ImplementationAdded, ImplementationRemoved, ImplementationReplaced,
-        ImplementationFinalized
+        ImplementationFinalized,
     };
     use super::super::token_bridge::TokenBridge;
     use super::super::test_utils::test_utils::{
@@ -48,15 +48,15 @@ mod replaceability_test {
         set_contract_address_as_not_caller, pop_and_deserialize_last_event, pop_last_k_events,
         deserialize_event, get_erc20_token, get_replaceable, set_caller_as_upgrade_governor,
         simple_deploy_token, simple_deploy_lockable_token, deploy_token_bridge,
-        DEFAULT_UPGRADE_DELAY
+        DEFAULT_UPGRADE_DELAY,
     };
     use super::super::replaceability_interface::{
         EICData, ImplementationData, IReplaceable, IReplaceableDispatcher,
-        IReplaceableDispatcherTrait
+        IReplaceableDispatcherTrait,
     };
     use super::super::roles_interface::{IRolesDispatcher, IRolesDispatcherTrait};
     use super::super::access_control_interface::{
-        IAccessControlDispatcher, IAccessControlDispatcherTrait
+        IAccessControlDispatcher, IAccessControlDispatcherTrait,
     };
 
 
@@ -69,7 +69,7 @@ mod replaceability_test {
 
     fn dummy_implementation_data(final: bool) -> ImplementationData {
         ImplementationData {
-            impl_hash: get_token_bridge_impl_hash(), eic_data: Option::None(()), final: final
+            impl_hash: get_token_bridge_impl_hash(), eic_data: Option::None(()), final: final,
         }
     }
 
@@ -88,11 +88,11 @@ mod replaceability_test {
 
         let eic_data = EICData {
             eic_hash: EICTestContract::TEST_CLASS_HASH.try_into().unwrap(),
-            eic_init_data: calldata.span()
+            eic_init_data: calldata.span(),
         };
 
         ImplementationData {
-            impl_hash: get_token_bridge_impl_hash(), eic_data: Option::Some(eic_data), final: false
+            impl_hash: get_token_bridge_impl_hash(), eic_data: Option::Some(eic_data), final: false,
         }
     }
 
@@ -104,7 +104,7 @@ mod replaceability_test {
         let token_bridge_state = TokenBridge::contract_state_for_testing();
         assert(
             TokenBridge::ReplaceableInternal::is_finalized(@token_bridge_state) == expected,
-            'FINALIZED_VALUE_MISMATCH'
+            'FINALIZED_VALUE_MISMATCH',
         );
         starknet::testing::set_contract_address(orig);
     }
@@ -131,7 +131,7 @@ mod replaceability_test {
         let replaceable = get_replaceable(:replaceable_address);
         // Validate the upgrade delay.
         assert(
-            replaceable.get_upgrade_delay() == DEFAULT_UPGRADE_DELAY, 'DEFAULT_UPGRADE_DELAY_ERROR'
+            replaceable.get_upgrade_delay() == DEFAULT_UPGRADE_DELAY, 'DEFAULT_UPGRADE_DELAY_ERROR',
         );
     }
 
@@ -166,26 +166,26 @@ mod replaceability_test {
         // Check implementation time pre addition.
         assert(
             replaceable.get_impl_activation_time(:implementation_data) == 0,
-            'INCORRECT_IMPLEMENTATION_ERROR'
+            'INCORRECT_IMPLEMENTATION_ERROR',
         );
         replaceable.add_new_implementation(:implementation_data);
         assert(
             replaceable.get_impl_activation_time(:implementation_data) == DEFAULT_UPGRADE_DELAY,
-            'INCORRECT_IMPLEMENTATION_ERROR'
+            'INCORRECT_IMPLEMENTATION_ERROR',
         );
 
         // Validate event emission.
         let emitted_event = pop_and_deserialize_last_event(address: replaceable_address);
         assert(
             emitted_event == Event::ImplementationAdded(
-                ImplementationAdded { implementation_data: implementation_data }
+                ImplementationAdded { implementation_data: implementation_data },
             ),
-            'ImplementationAdded Error'
+            'ImplementationAdded Error',
         );
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_add_new_implementation_not_upgrade_governor() {
         // Deploy the token bridge and continue with the test.
@@ -194,7 +194,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_add_new_implementation_not_upgrade_governor() {
         // Deploy the ERC20 token and continue with the test.
@@ -203,7 +203,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_add_new_implementation_not_upgrade_governor() {
         // Deploy the Lockable token and continue with the test.
@@ -255,7 +255,7 @@ mod replaceability_test {
         replaceable.remove_implementation(:implementation_data);
         assert(
             replaceable.get_impl_activation_time(:implementation_data) == 0,
-            'INCORRECT_IMPLEMENTATION_ERROR'
+            'INCORRECT_IMPLEMENTATION_ERROR',
         );
 
         // Add implementation.
@@ -265,9 +265,9 @@ mod replaceability_test {
         let emitted_event = pop_and_deserialize_last_event(address: replaceable_address);
         assert(
             emitted_event == Event::ImplementationAdded(
-                ImplementationAdded { implementation_data: implementation_data }
+                ImplementationAdded { implementation_data: implementation_data },
             ),
-            'ImplementationAdded Error'
+            'ImplementationAdded Error',
         );
 
         // Remove implementation.
@@ -275,21 +275,21 @@ mod replaceability_test {
 
         assert(
             replaceable.get_impl_activation_time(:implementation_data) == 0,
-            'INCORRECT_IMPLEMENTATION_ERROR'
+            'INCORRECT_IMPLEMENTATION_ERROR',
         );
 
         // Validate event emission for removing the implementation.
         let emitted_event = pop_and_deserialize_last_event(address: replaceable_address);
         assert(
             emitted_event == Event::ImplementationRemoved(
-                ImplementationRemoved { implementation_data: implementation_data }
+                ImplementationRemoved { implementation_data: implementation_data },
             ),
-            'ImplementationRemoved Error'
+            'ImplementationRemoved Error',
         );
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_remove_implementation_not_upgrade_governor() {
         let replaceable_address = deploy_token_bridge();
@@ -297,7 +297,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_remove_implementation_not_upgrade_governor() {
         let replaceable_address = simple_deploy_token();
@@ -305,7 +305,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_remove_implementation_not_upgrade_governor() {
         let replaceable_address = simple_deploy_lockable_token();
@@ -366,7 +366,7 @@ mod replaceability_test {
 
         assert(
             updated_upgrade_delay == DEFAULT_UPGRADE_DELAY + EIC_UPGRADE_DELAY_ADDITION,
-            'EIC_FAILED'
+            'EIC_FAILED',
         );
     }
 
@@ -414,17 +414,17 @@ mod replaceability_test {
         let emitted_event = pop_and_deserialize_last_event(address: replaceable_address);
         assert(
             emitted_event == Event::ImplementationReplaced(
-                ImplementationReplaced { implementation_data: implementation_data }
+                ImplementationReplaced { implementation_data: implementation_data },
             ),
-            'ImplementationReplaced Error'
+            'ImplementationReplaced Error',
         );
-    // TODO check the new impl hash.
+        // TODO check the new impl hash.
     // TODO check the new impl is not final.
     // TODO check that ImplementationFinalized is NOT emitted.
     }
 
     #[test]
-    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_remove_impl_on_replace() {
         let replaceable_address = deploy_token_bridge();
@@ -432,7 +432,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_remove_impl_on_replace() {
         let replaceable_address = simple_deploy_token();
@@ -440,7 +440,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_remove_impl_on_replace() {
         let replaceable_address = simple_deploy_lockable_token();
@@ -467,12 +467,12 @@ mod replaceability_test {
         replaceable.add_new_implementation(:implementation_data);
         replaceable.add_new_implementation(implementation_data: other_implementation_data);
         assert(
-            replaceable.get_impl_activation_time(:implementation_data) != 0, 'EXPECTED_NON_ZERO'
+            replaceable.get_impl_activation_time(:implementation_data) != 0, 'EXPECTED_NON_ZERO',
         );
         assert(
             replaceable
                 .get_impl_activation_time(implementation_data: other_implementation_data) != 0,
-            'EXPECTED_NON_ZERO'
+            'EXPECTED_NON_ZERO',
         );
 
         // Advance time to enable implementation.
@@ -484,7 +484,7 @@ mod replaceability_test {
         assert(
             replaceable
                 .get_impl_activation_time(implementation_data: other_implementation_data) != 0,
-            'EXPECTED_NON_ZERO'
+            'EXPECTED_NON_ZERO',
         );
 
         // Should revert with UNKNOWN_IMPLEMENTATION as replace_to removes the implementation.
@@ -492,7 +492,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('IMPLEMENTATION_EXPIRED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('IMPLEMENTATION_EXPIRED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_expire_impl() {
         // Tests that when impl class-hash cannot be replaced to after expiration.
@@ -500,7 +500,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('IMPLEMENTATION_EXPIRED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('IMPLEMENTATION_EXPIRED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_expire_impl() {
         // Tests that when impl class-hash cannot be replaced to after expiration.
@@ -508,7 +508,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('IMPLEMENTATION_EXPIRED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('IMPLEMENTATION_EXPIRED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_expire_impl() {
         // Tests that when impl class-hash cannot be replaced to after expiration.
@@ -525,7 +525,7 @@ mod replaceability_test {
         // Add implementation.
         replaceable.add_new_implementation(:implementation_data);
         assert(
-            replaceable.get_impl_activation_time(:implementation_data) != 0, 'EXPECTED_NON_ZERO'
+            replaceable.get_impl_activation_time(:implementation_data) != 0, 'EXPECTED_NON_ZERO',
         );
 
         // Advance time to enable implementation.
@@ -538,7 +538,7 @@ mod replaceability_test {
         // Add implementation for 2md time.
         replaceable.add_new_implementation(:implementation_data);
         starknet::testing::set_block_timestamp(
-            DEFAULT_UPGRADE_DELAY + 1 + DEFAULT_UPGRADE_DELAY + 14 * 3600 * 24 + 2
+            DEFAULT_UPGRADE_DELAY + 1 + DEFAULT_UPGRADE_DELAY + 14 * 3600 * 24 + 2,
         );
 
         // Should revert on expired_impl.
@@ -587,23 +587,23 @@ mod replaceability_test {
         let implementation_events = pop_last_k_events(address: replaceable_address, k: 2);
 
         let implementation_replaced_event = deserialize_event(
-            raw_event: *implementation_events.at(0)
+            raw_event: *implementation_events.at(0),
         );
         assert(
             implementation_replaced_event == ImplementationReplaced {
-                implementation_data: implementation_data
+                implementation_data: implementation_data,
             },
-            'ImplementationReplaced Error'
+            'ImplementationReplaced Error',
         );
 
         let implementation_finalized_event = deserialize_event(
-            raw_event: *implementation_events.at(1)
+            raw_event: *implementation_events.at(1),
         );
         assert(
             implementation_finalized_event == ImplementationFinalized {
-                impl_hash: implementation_data.impl_hash
+                impl_hash: implementation_data.impl_hash,
             },
-            'ImplementationFinalized Error'
+            'ImplementationFinalized Error',
         );
         // TODO check the new impl hash.
 
@@ -612,21 +612,21 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_replace_to_not_upgrade_governor() {
         _replace_to_not_upgrade_governor(replaceable_address: deploy_token_bridge());
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_replace_to_not_upgrade_governor() {
         _replace_to_not_upgrade_governor(replaceable_address: simple_deploy_token());
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_UPGRADE_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_replace_to_not_upgrade_governor() {
         _replace_to_not_upgrade_governor(replaceable_address: simple_deploy_lockable_token());
@@ -642,7 +642,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('FINALIZED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('FINALIZED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_replace_to_already_final() {
         let replaceable_address = deploy_token_bridge();
@@ -650,7 +650,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('FINALIZED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('FINALIZED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_replace_to_already_final() {
         let replaceable_address = simple_deploy_token();
@@ -658,7 +658,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('FINALIZED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('FINALIZED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_replace_to_already_final() {
         let replaceable_address = simple_deploy_lockable_token();
@@ -685,7 +685,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_bridge_unknown_implementation() {
         let replaceable_address = deploy_token_bridge();
@@ -693,7 +693,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_erc20_unknown_implementation() {
         let replaceable_address = simple_deploy_token();
@@ -701,7 +701,7 @@ mod replaceability_test {
     }
 
     #[test]
-    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('UNKNOWN_IMPLEMENTATION', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_replaceability_lockable_unknown_implementation() {
         let replaceable_address = simple_deploy_lockable_token();

@@ -14,30 +14,30 @@ mod ERC20Lockable {
     use src::err_msg::ERC20Errors as ERC20Errors;
     use src::err_msg::ReplaceErrors as ReplaceErrors;
 
-    use integer::BoundedInt;
+    use core::num::traits::Bounded;
     use openzeppelin::token::erc20::interface::IERC20;
     use openzeppelin::token::erc20::interface::IERC20CamelOnly;
     use src::strk::eip712helper::{
-        calc_domain_hash, lock_and_delegate_message_hash, validate_signature
+        calc_domain_hash, lock_and_delegate_message_hash, validate_signature,
     };
     use src::mintable_token_interface::{IMintableToken, IMintableTokenCamel};
     use src::mintable_lock_interface::{
         ILockAndDelegate, IMintableLock, IMintableLockDispatcher, IMintableLockDispatcherTrait,
-        ILockingContract
+        ILockingContract,
     };
     use src::access_control_interface::{
-        IAccessControl, RoleId, RoleAdminChanged, RoleGranted, RoleRevoked
+        IAccessControl, RoleId, RoleAdminChanged, RoleGranted, RoleRevoked,
     };
     use src::roles_interface::IMinimalRoles;
     use src::roles_interface::{
         GOVERNANCE_ADMIN, UPGRADE_GOVERNOR, GovernanceAdminAdded, GovernanceAdminRemoved,
-        UpgradeGovernorAdded, UpgradeGovernorRemoved
+        UpgradeGovernorAdded, UpgradeGovernorRemoved,
     };
 
     use src::replaceability_interface::{
         ImplementationData, IReplaceable, IReplaceableDispatcher, IReplaceableDispatcherTrait,
         EIC_INITIALIZE_SELECTOR, IMPLEMENTATION_EXPIRATION, ImplementationAdded,
-        ImplementationRemoved, ImplementationReplaced, ImplementationFinalized
+        ImplementationRemoved, ImplementationReplaced, ImplementationFinalized,
     };
     use starknet::ContractAddress;
     use starknet::class_hash::{ClassHash, Felt252TryIntoClassHash};
@@ -50,13 +50,13 @@ mod ERC20Lockable {
         ERC20_symbol: felt252,
         ERC20_decimals: u8,
         ERC20_total_supply: u256,
-        ERC20_balances: LegacyMap<ContractAddress, u256>,
-        ERC20_allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
+        ERC20_balances: starknet::storage::Map<ContractAddress, u256>,
+        ERC20_allowances: starknet::storage::Map<(ContractAddress, ContractAddress), u256>,
         // --- Lock And Delegate ---
         // Address of the contract that is used to lock & delegate on.
         locking_contract: ContractAddress,
         // Hashes of Lock & Delegate called by signature, to prevent replay.
-        recorded_locks: LegacyMap<felt252, bool>,
+        recorded_locks: starknet::storage::Map<felt252, bool>,
         // EIP 712 domain separation.
         domain_hash: felt252,
         // --- Mintable Token ---
@@ -65,16 +65,16 @@ mod ERC20Lockable {
         // Delay in seconds before performing an upgrade.
         upgrade_delay: u64,
         // Timestamp by which implementation can be activated.
-        impl_activation_time: LegacyMap<felt252, u64>,
+        impl_activation_time: starknet::storage::Map<felt252, u64>,
         // Timestamp until which implementation can be activated.
-        impl_expiration_time: LegacyMap<felt252, u64>,
+        impl_expiration_time: starknet::storage::Map<felt252, u64>,
         // Is the implementation finalized.
         finalized: bool,
         // --- Access Control ---
         // For each role id store its role admin id.
-        role_admin: LegacyMap<RoleId, RoleId>,
+        role_admin: starknet::storage::Map<RoleId, RoleId>,
         // For each role and address, stores true if the address has this role; otherwise, false.
-        role_members: LegacyMap<(RoleId, ContractAddress), bool>,
+        role_members: starknet::storage::Map<(RoleId, ContractAddress), bool>,
     }
 
     #[event]
@@ -101,22 +101,22 @@ mod ERC20Lockable {
     /// Emitted when tokens are moved from address `from` to address `to`.
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct Transfer {
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         from: ContractAddress,
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         to: ContractAddress,
-        value: u256
+        value: u256,
     }
 
     /// Emitted when the allowance of a `spender` for an `owner` is set by a call
     /// to [approve](approve). `value` is the new allowance.
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct Approval {
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         owner: ContractAddress,
-        // #[key] - Not indexed, to maintain backward compatibility.
+        #[key]
         spender: ContractAddress,
-        value: u256
+        value: u256,
     }
 
     /// Initializes the state of the ERC20 contract. This includes setting the
@@ -147,7 +147,7 @@ mod ERC20Lockable {
     impl RolesInternal of _RolesInternal {
         // --- Roles ---
         fn _grant_role_and_emit(
-            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event
+            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event,
         ) {
             if !self.has_role(:role, :account) {
                 assert(account.is_non_zero(), AccessErrors::ZERO_ADDRESS);
@@ -157,7 +157,7 @@ mod ERC20Lockable {
         }
 
         fn _revoke_role_and_emit(
-            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event
+            ref self: ContractState, role: RoleId, account: ContractAddress, event: Event,
         ) {
             if self.has_role(:role, :account) {
                 self.revoke_role(:role, :account);
@@ -171,12 +171,12 @@ mod ERC20Lockable {
         // contract's constructor.
         //
         fn _initialize_roles(
-            ref self: ContractState, provisional_governance_admin: ContractAddress
+            ref self: ContractState, provisional_governance_admin: ContractAddress,
         ) {
             let un_initialized = self.get_role_admin(role: GOVERNANCE_ADMIN) == 0;
             assert(un_initialized, AccessErrors::ALREADY_INITIALIZED);
             assert(
-                provisional_governance_admin.is_non_zero(), AccessErrors::ZERO_ADDRESS_GOV_ADMIN
+                provisional_governance_admin.is_non_zero(), AccessErrors::ZERO_ADDRESS_GOV_ADMIN,
             );
             self._grant_role(role: GOVERNANCE_ADMIN, account: provisional_governance_admin);
             self._set_role_admin(role: GOVERNANCE_ADMIN, admin_role: GOVERNANCE_ADMIN);
@@ -185,7 +185,7 @@ mod ERC20Lockable {
 
         fn only_upgrade_governor(self: @ContractState) {
             assert(
-                self.is_upgrade_governor(get_caller_address()), AccessErrors::ONLY_UPGRADE_GOVERNOR
+                self.is_upgrade_governor(get_caller_address()), AccessErrors::ONLY_UPGRADE_GOVERNOR,
             );
         }
     }
@@ -223,12 +223,12 @@ mod ERC20Lockable {
             amount: u256,
             nonce: felt252,
             expiry: u64,
-            signature: Array<felt252>
+            signature: Array<felt252>,
         ) {
             assert(starknet::get_block_timestamp() <= expiry, 'SIGNATURE_EXPIRED');
             let domain = self.domain_hash.read();
             let hash = lock_and_delegate_message_hash(
-                :domain, :account, :delegatee, :amount, :nonce, :expiry
+                :domain, :account, :delegatee, :amount, :nonce, :expiry,
             );
 
             // Assert this signed request was not used.
@@ -249,7 +249,7 @@ mod ERC20Lockable {
             ref self: ContractState,
             account: ContractAddress,
             delegatee: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let locking_contract = self.locking_contract.read();
             assert(locking_contract.is_non_zero(), 'LOCKING_CONTRACT_NOT_SET');
@@ -262,11 +262,11 @@ mod ERC20Lockable {
             ref self: ContractState,
             account: ContractAddress,
             spender: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let current_allowance = self.ERC20_allowances.read((account, spender));
             // Skip, in case of allowance + amount exceed max_uint.
-            if current_allowance <= BoundedInt::max() - amount {
+            if current_allowance <= Bounded::MAX - amount {
                 self._approve(owner: account, :spender, amount: (current_allowance + amount));
             }
         }
@@ -316,7 +316,7 @@ mod ERC20Lockable {
 
         // Sets the implementation activation time.
         fn set_impl_activation_time(
-            ref self: ContractState, implementation_data: ImplementationData, activation_time: u64
+            ref self: ContractState, implementation_data: ImplementationData, activation_time: u64,
         ) {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_activation_time.write(impl_key, activation_time);
@@ -324,7 +324,7 @@ mod ERC20Lockable {
 
         // Returns the implementation activation time.
         fn get_impl_expiration_time(
-            self: @ContractState, implementation_data: ImplementationData
+            self: @ContractState, implementation_data: ImplementationData,
         ) -> u64 {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_expiration_time.read(impl_key)
@@ -332,7 +332,7 @@ mod ERC20Lockable {
 
         // Sets the implementation expiration time.
         fn set_impl_expiration_time(
-            ref self: ContractState, implementation_data: ImplementationData, expiration_time: u64
+            ref self: ContractState, implementation_data: ImplementationData, expiration_time: u64,
         ) {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_expiration_time.write(impl_key, expiration_time);
@@ -347,14 +347,14 @@ mod ERC20Lockable {
 
         // Gets the implementation activation time.
         fn get_impl_activation_time(
-            self: @ContractState, implementation_data: ImplementationData
+            self: @ContractState, implementation_data: ImplementationData,
         ) -> u64 {
             let impl_key = calc_impl_key(:implementation_data);
             self.impl_activation_time.read(impl_key)
         }
 
         fn add_new_implementation(
-            ref self: ContractState, implementation_data: ImplementationData
+            ref self: ContractState, implementation_data: ImplementationData,
         ) {
             self.only_upgrade_governor();
 
@@ -417,11 +417,11 @@ mod ERC20Lockable {
                     let res = library_call_syscall(
                         class_hash: eic_data.eic_hash,
                         function_selector: EIC_INITIALIZE_SELECTOR,
-                        calldata: calldata_wrapper.span()
+                        calldata: calldata_wrapper.span(),
                     );
                     assert(res.is_ok(), ReplaceErrors::EIC_LIB_CALL_FAILED);
                 },
-                Option::None(()) => {}
+                Option::None(()) => {},
             };
 
             // Replace the class hash.
@@ -520,7 +520,7 @@ mod ERC20Lockable {
 
         fn register_governance_admin(ref self: ContractState, account: ContractAddress) {
             let event = Event::GovernanceAdminAdded(
-                GovernanceAdminAdded { added_account: account, added_by: get_caller_address() }
+                GovernanceAdminAdded { added_account: account, added_by: get_caller_address() },
             );
             self._grant_role_and_emit(role: GOVERNANCE_ADMIN, :account, :event);
         }
@@ -528,15 +528,15 @@ mod ERC20Lockable {
         fn remove_governance_admin(ref self: ContractState, account: ContractAddress) {
             let event = Event::GovernanceAdminRemoved(
                 GovernanceAdminRemoved {
-                    removed_account: account, removed_by: get_caller_address()
-                }
+                    removed_account: account, removed_by: get_caller_address(),
+                },
             );
             self._revoke_role_and_emit(role: GOVERNANCE_ADMIN, :account, :event);
         }
 
         fn register_upgrade_governor(ref self: ContractState, account: ContractAddress) {
             let event = Event::UpgradeGovernorAdded(
-                UpgradeGovernorAdded { added_account: account, added_by: get_caller_address() }
+                UpgradeGovernorAdded { added_account: account, added_by: get_caller_address() },
             );
             self._grant_role_and_emit(role: UPGRADE_GOVERNOR, :account, :event);
         }
@@ -544,8 +544,8 @@ mod ERC20Lockable {
         fn remove_upgrade_governor(ref self: ContractState, account: ContractAddress) {
             let event = Event::UpgradeGovernorRemoved(
                 UpgradeGovernorRemoved {
-                    removed_account: account, removed_by: get_caller_address()
-                }
+                    removed_account: account, removed_by: get_caller_address(),
+                },
             );
             self._revoke_role_and_emit(role: UPGRADE_GOVERNOR, :account, :event);
         }
@@ -594,7 +594,7 @@ mod ERC20Lockable {
         /// This value changes when [approve](approve) or [transfer_from](transfer_from)
         /// are called.
         fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress,
         ) -> u256 {
             self.ERC20_allowances.read((owner, spender))
         }
@@ -614,7 +614,7 @@ mod ERC20Lockable {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) -> bool {
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
@@ -634,7 +634,7 @@ mod ERC20Lockable {
     /// Emits an [Approval](Approval) event indicating the updated allowance.
     #[external(v0)]
     fn increase_allowance(
-        ref self: ContractState, spender: ContractAddress, added_value: u256
+        ref self: ContractState, spender: ContractAddress, added_value: u256,
     ) -> bool {
         self._increase_allowance(spender, added_value)
     }
@@ -643,7 +643,7 @@ mod ERC20Lockable {
     /// Emits an [Approval](Approval) event indicating the updated allowance.
     #[external(v0)]
     fn decrease_allowance(
-        ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ref self: ContractState, spender: ContractAddress, subtracted_value: u256,
     ) -> bool {
         self._decrease_allowance(spender, subtracted_value)
     }
@@ -668,7 +668,7 @@ mod ERC20Lockable {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) -> bool {
             ERC20Impl::transfer_from(ref self, sender, recipient, amount)
         }
@@ -678,7 +678,7 @@ mod ERC20Lockable {
     /// See [increase_allowance](increase_allowance).
     #[external(v0)]
     fn increaseAllowance(
-        ref self: ContractState, spender: ContractAddress, addedValue: u256
+        ref self: ContractState, spender: ContractAddress, addedValue: u256,
     ) -> bool {
         increase_allowance(ref self, spender, addedValue)
     }
@@ -687,7 +687,7 @@ mod ERC20Lockable {
     /// See [decrease_allowance](decrease_allowance).
     #[external(v0)]
     fn decreaseAllowance(
-        ref self: ContractState, spender: ContractAddress, subtractedValue: u256
+        ref self: ContractState, spender: ContractAddress, subtractedValue: u256,
     ) -> bool {
         decrease_allowance(ref self, spender, subtractedValue)
     }
@@ -712,7 +712,7 @@ mod ERC20Lockable {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!sender.is_zero(), ERC20Errors::TRANSFER_FROM_ZERO);
             assert(!recipient.is_zero(), ERC20Errors::TRANSFER_TO_ZERO);
@@ -725,7 +725,7 @@ mod ERC20Lockable {
         /// `owner`s tokens.
         /// Emits an [Approval](Approval) event.
         fn _approve(
-            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         ) {
             assert(!owner.is_zero(), ERC20Errors::APPROVE_FROM_ZERO);
             assert(!spender.is_zero(), ERC20Errors::APPROVE_TO_ZERO);
@@ -754,12 +754,12 @@ mod ERC20Lockable {
         /// Internal method for the external [increase_allowance](increase_allowance).
         /// Emits an [Approval](Approval) event indicating the updated allowance.
         fn _increase_allowance(
-            ref self: ContractState, spender: ContractAddress, added_value: u256
+            ref self: ContractState, spender: ContractAddress, added_value: u256,
         ) -> bool {
             let caller = get_caller_address();
             self
                 ._approve(
-                    caller, spender, self.ERC20_allowances.read((caller, spender)) + added_value
+                    caller, spender, self.ERC20_allowances.read((caller, spender)) + added_value,
                 );
             true
         }
@@ -767,14 +767,14 @@ mod ERC20Lockable {
         /// Internal method for the external [decrease_allowance](decrease_allowance).
         /// Emits an [Approval](Approval) event indicating the updated allowance.
         fn _decrease_allowance(
-            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256,
         ) -> bool {
             let caller = get_caller_address();
             self
                 ._approve(
                     caller,
                     spender,
-                    self.ERC20_allowances.read((caller, spender)) - subtracted_value
+                    self.ERC20_allowances.read((caller, spender)) - subtracted_value,
                 );
             true
         }
@@ -783,10 +783,10 @@ mod ERC20Lockable {
         /// Does not update the allowance value in case of infinite allowance.
         /// Possibly emits an [Approval](Approval) event.
         fn _spend_allowance(
-            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         ) {
             let current_allowance = self.ERC20_allowances.read((owner, spender));
-            if current_allowance != BoundedInt::max() {
+            if current_allowance != Bounded::MAX {
                 self._approve(owner, spender, current_allowance - amount);
             }
         }

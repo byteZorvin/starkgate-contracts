@@ -3,24 +3,24 @@
 mod LegacyBridgeUpgradeEIC {
     const WITHDRAWAL_LIMIT_PCT: u8 = 5;
     use starknet::{
-        ContractAddress, get_caller_address, EthAddress, EthAddressIntoFelt252, EthAddressSerde
+        ContractAddress, get_caller_address, EthAddress, EthAddressIntoFelt252, EthAddressSerde,
     };
     use super::super::erc20_interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use super::super::access_control_interface::{
-        IAccessControl, RoleId, RoleAdminChanged, RoleGranted
+        IAccessControl, RoleId, RoleAdminChanged, RoleGranted,
     };
     use super::super::replaceability_interface::IEICInitializable;
     use super::super::roles_interface::{
         APP_GOVERNOR, APP_ROLE_ADMIN, GOVERNANCE_ADMIN, OPERATOR, SECURITY_ADMIN, SECURITY_AGENT,
-        TOKEN_ADMIN, UPGRADE_GOVERNOR
+        TOKEN_ADMIN, UPGRADE_GOVERNOR,
     };
 
     #[storage]
     struct Storage {
         // --- Token Bridge ---
         // Mapping from between l1<->l2 token addresses.
-        l1_l2_token_map: LegacyMap<EthAddress, ContractAddress>,
-        l2_l1_token_map: LegacyMap<ContractAddress, EthAddress>,
+        l1_l2_token_map: starknet::storage::Map<EthAddress, ContractAddress>,
+        l2_l1_token_map: starknet::storage::Map<ContractAddress, EthAddress>,
         daily_withdrawal_limit_pct: u8,
         // `l2_token` is a legacy storage variable from older versions.
         // It's expected to be non-empty only in a case of an upgrade from such a version.
@@ -28,9 +28,9 @@ mod LegacyBridgeUpgradeEIC {
         l2_token: ContractAddress,
         // --- Access Control ---
         // For each role id store its role admin id.
-        role_admin: LegacyMap<RoleId, RoleId>,
+        role_admin: starknet::storage::Map<RoleId, RoleId>,
         // For each role and address, stores true if the address has this role; otherwise, false.
-        role_members: LegacyMap<(RoleId, ContractAddress), bool>,
+        role_members: starknet::storage::Map<(RoleId, ContractAddress), bool>,
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
@@ -99,7 +99,7 @@ mod LegacyBridgeUpgradeEIC {
         }
 
         fn setup_l1_l2_mappings(
-            ref self: ContractState, l1_token: EthAddress, l2_token: ContractAddress
+            ref self: ContractState, l1_token: EthAddress, l2_token: ContractAddress,
         ) {
             // Check that running on legacy bridge context.
             let legacy_l2_token = self.l2_token.read();

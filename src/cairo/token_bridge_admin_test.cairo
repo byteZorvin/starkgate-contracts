@@ -5,7 +5,7 @@ mod token_bridge_admin_test {
     use starknet::{EthAddress, get_block_timestamp};
 
     use super::super::token_bridge::TokenBridge::{
-        Event, L1BridgeSet, Erc20ClassHashStored, SECONDS_IN_DAY, L2TokenGovernanceChanged
+        Event, L1BridgeSet, Erc20ClassHashStored, SECONDS_IN_DAY, L2TokenGovernanceChanged,
     };
 
 
@@ -20,7 +20,7 @@ mod token_bridge_admin_test {
 
     use super::super::token_bridge_interface::{ITokenBridgeDispatcher, ITokenBridgeDispatcherTrait};
     use super::super::token_bridge_admin_interface::{
-        ITokenBridgeAdminDispatcher, ITokenBridgeAdminDispatcherTrait
+        ITokenBridgeAdminDispatcher, ITokenBridgeAdminDispatcherTrait,
     };
 
     const DEFAULT_DEPOSITOR_ETH_ADDRESS: felt252 = 7;
@@ -49,15 +49,15 @@ mod token_bridge_admin_test {
         let emitted_event = pop_and_deserialize_last_event(address: token_bridge_address);
         assert(
             emitted_event == Event::L1BridgeSet(
-                L1BridgeSet { l1_bridge_address: l1_bridge_address }
+                L1BridgeSet { l1_bridge_address: l1_bridge_address },
             ),
-            'L1BridgeSet Error'
+            'L1BridgeSet Error',
         );
     }
 
 
     #[test]
-    #[should_panic(expected: ('ONLY_APP_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_APP_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_missing_role_set_l1_bridge() {
         let token_bridge_admin = deploy_and_prepare();
@@ -69,7 +69,7 @@ mod token_bridge_admin_test {
     }
 
     #[test]
-    #[should_panic(expected: ('L1_BRIDGE_ALREADY_INITIALIZED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('L1_BRIDGE_ALREADY_INITIALIZED', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_already_set_l1_bridge() {
         let token_bridge_admin = deploy_and_prepare();
@@ -81,7 +81,7 @@ mod token_bridge_admin_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ZERO_L1_BRIDGE_ADDRESS', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ZERO_L1_BRIDGE_ADDRESS', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_zero_address_set_l1_bridge() {
         let token_bridge_admin = deploy_and_prepare();
@@ -109,10 +109,10 @@ mod token_bridge_admin_test {
         assert(
             emitted_event == Event::Erc20ClassHashStored(
                 Erc20ClassHashStored {
-                    previous_hash: ClassHashZeroable::zero(), erc20_class_hash: erc20_class_hash
-                }
+                    previous_hash: ClassHashZeroable::zero(), erc20_class_hash: erc20_class_hash,
+                },
             ),
-            'Erc20ClassHashStored Error'
+            'Erc20ClassHashStored Error',
         );
     }
 
@@ -130,22 +130,22 @@ mod token_bridge_admin_test {
 
         assert(
             token_bridge_admin.get_l2_token_governance() == _not_caller,
-            'failed to set l2_token_gov'
+            'failed to set l2_token_gov',
         );
         let emitted_event = pop_and_deserialize_last_event(address: token_bridge_address);
         assert(
             emitted_event == Event::L2TokenGovernanceChanged(
                 L2TokenGovernanceChanged {
                     previous_governance: ContractAddressZeroable::zero(),
-                    new_governance: _not_caller
-                }
+                    new_governance: _not_caller,
+                },
             ),
-            'L2TokenGovernanceChanged Error'
+            'L2TokenGovernanceChanged Error',
         );
 
         token_bridge_admin.set_l2_token_governance(l2_token_governance: _caller);
         assert(
-            token_bridge_admin.get_l2_token_governance() == _caller, 'failed to set l2_token_gov'
+            token_bridge_admin.get_l2_token_governance() == _caller, 'failed to set l2_token_gov',
         );
 
         // Validate event.
@@ -153,15 +153,15 @@ mod token_bridge_admin_test {
         assert(
             emitted_event == Event::L2TokenGovernanceChanged(
                 L2TokenGovernanceChanged {
-                    previous_governance: _not_caller, new_governance: _caller
-                }
+                    previous_governance: _not_caller, new_governance: _caller,
+                },
             ),
-            'L2TokenGovernanceChanged Error'
+            'L2TokenGovernanceChanged Error',
         );
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_APP_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_APP_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_missing_role_set_erc20_class_hash() {
         let token_bridge_admin = deploy_and_prepare();
@@ -173,7 +173,7 @@ mod token_bridge_admin_test {
 
 
     #[test]
-    #[should_panic(expected: ('ONLY_APP_GOVERNOR', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_APP_GOVERNOR', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_missing_role_set_l2_token_gov() {
         let token_bridge = deploy_and_prepare();
@@ -201,7 +201,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -235,7 +235,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -280,7 +280,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -324,7 +324,7 @@ mod token_bridge_admin_test {
     // is above the maximum allowed amount.
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED'))]
     fn test_failed_initiate_token_withdraw_with_and_without_limits() {
         let (l1_bridge_address, l1_token, l1_recipient) = get_default_l1_addresses();
         let depositor = EthAddress { address: DEFAULT_DEPOSITOR_ETH_ADDRESS };
@@ -339,7 +339,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -367,7 +367,7 @@ mod token_bridge_admin_test {
             .initiate_token_withdraw(
                 :l1_token,
                 :l1_recipient,
-                amount: daily_withdrawal_limit - first_withdrawal_amount + 1
+                amount: daily_withdrawal_limit - first_withdrawal_amount + 1,
             );
     }
 
@@ -392,7 +392,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -412,7 +412,7 @@ mod token_bridge_admin_test {
         starknet::testing::set_block_timestamp(block_timestamp: SECONDS_IN_DAY + current_time);
 
         let new_daily_withdrawal_limit = _get_daily_withdrawal_limit(
-            :token_bridge_address, :l1_token
+            :token_bridge_address, :l1_token,
         );
         withdraw_and_validate(
             :token_bridge_address,
@@ -443,7 +443,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -480,7 +480,7 @@ mod token_bridge_admin_test {
     // maximum allowed amount. This is done in a single withdrawal.
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED'))]
     fn test_failed_initiate_token_withdraw_limit_exceeded_one_withdrawal() {
         let (l1_bridge_address, l1_token, l1_recipient) = get_default_l1_addresses();
         let depositor = EthAddress { address: DEFAULT_DEPOSITOR_ETH_ADDRESS };
@@ -495,7 +495,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -513,7 +513,7 @@ mod token_bridge_admin_test {
     // maximum allowed amount. This is done in a two withdrawals.
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED'))]
     fn test_failed_initiate_token_withdraw_limit_exceeded_two_withdrawals() {
         let (l1_bridge_address, l1_token, l1_recipient) = get_default_l1_addresses();
         let depositor = EthAddress { address: DEFAULT_DEPOSITOR_ETH_ADDRESS };
@@ -528,7 +528,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         enable_withdrawal_limit(:token_bridge_address, :l1_token);
@@ -545,7 +545,7 @@ mod token_bridge_admin_test {
             .initiate_token_withdraw(
                 :l1_token,
                 :l1_recipient,
-                amount: daily_withdrawal_limit - first_withdrawal_amount + 1
+                amount: daily_withdrawal_limit - first_withdrawal_amount + 1,
             );
     }
 
@@ -554,7 +554,7 @@ mod token_bridge_admin_test {
     // maximum allowed amount per that day.
     #[test]
     #[available_gas(30000000)]
-    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('LIMIT_EXCEEDED', 'ENTRYPOINT_FAILED'))]
     fn test_failed_initiate_token_withdraw_limit_exceeded_same_day_different_time() {
         let (l1_bridge_address, l1_token, l1_recipient) = get_default_l1_addresses();
         let depositor = EthAddress { address: DEFAULT_DEPOSITOR_ETH_ADDRESS };
@@ -569,7 +569,7 @@ mod token_bridge_admin_test {
             :l1_token,
             :depositor,
             :l2_recipient,
-            :amount_to_deposit
+            :amount_to_deposit,
         );
 
         // Limit the withdrawal amount.
@@ -600,12 +600,12 @@ mod token_bridge_admin_test {
             .initiate_token_withdraw(
                 :l1_token,
                 :l1_recipient,
-                amount: daily_withdrawal_limit - first_withdrawal_amount + 1
+                amount: daily_withdrawal_limit - first_withdrawal_amount + 1,
             );
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_SECURITY_AGENT', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_SECURITY_AGENT', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_enable_withdrawal_limit_not_security_agent() {
         let token_bridge_address = deploy_token_bridge();
@@ -617,7 +617,7 @@ mod token_bridge_admin_test {
     }
 
     #[test]
-    #[should_panic(expected: ('ONLY_SECURITY_ADMIN', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('ONLY_SECURITY_ADMIN', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_disable_withdrawal_limit_not_security_admin() {
         let token_bridge_address = deploy_token_bridge();
@@ -632,7 +632,7 @@ mod token_bridge_admin_test {
     }
 
     #[test]
-    #[should_panic(expected: ('TOKEN_NOT_IN_BRIDGE', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('TOKEN_NOT_IN_BRIDGE', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_enable_withdrawal_limit_token_not_in_bridge() {
         // Deploy the token bridge and set the caller as the app governer (and as App Role Admin).
@@ -645,7 +645,7 @@ mod token_bridge_admin_test {
     }
 
     #[test]
-    #[should_panic(expected: ('TOKEN_NOT_IN_BRIDGE', 'ENTRYPOINT_FAILED',))]
+    #[should_panic(expected: ('TOKEN_NOT_IN_BRIDGE', 'ENTRYPOINT_FAILED'))]
     #[available_gas(30000000)]
     fn test_disable_withdrawal_limit_token_not_in_bridge() {
         // Deploy the token bridge and set the caller as the app governer (and as App Role Admin).

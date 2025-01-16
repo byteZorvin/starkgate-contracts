@@ -3,7 +3,10 @@ use starknet::ContractAddress;
 #[starknet::interface]
 trait IMintableLock<TContractState> {
     fn permissioned_lock_and_delegate(
-        ref self: TContractState, account: ContractAddress, delegatee: ContractAddress, amount: u256
+        ref self: TContractState,
+        account: ContractAddress,
+        delegatee: ContractAddress,
+        amount: u256,
     );
 }
 
@@ -23,7 +26,7 @@ trait ILockAndDelegate<TContractState> {
         amount: u256,
         nonce: felt252,
         expiry: u64,
-        signature: Array<felt252>
+        signature: Array<felt252>,
     );
 }
 
@@ -37,12 +40,12 @@ trait ITokenLock<TContractState> {
 struct Locked {
     #[key]
     account: ContractAddress,
-    amount: u256
+    amount: u256,
 }
 
 #[derive(Copy, Drop, PartialEq, starknet::Event)]
 struct Unlocked {
     #[key]
     account: ContractAddress,
-    amount: u256
+    amount: u256,
 }
